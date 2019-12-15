@@ -79,7 +79,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         var previewLayer: AVCaptureVideoPreviewLayer!
         var delegate: ScannerCoordinator?
 
-        override func viewDidLoad() {
+        override public func viewDidLoad() {
             super.viewDidLoad()
 
             view.backgroundColor = UIColor.black
@@ -121,7 +121,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
             captureSession.startRunning()
         }
 
-        override func viewWillAppear(_ animated: Bool) {
+        override public func viewWillAppear(_ animated: Bool) {
             super.viewWillAppear(animated)
 
             if (captureSession?.isRunning == false) {
@@ -129,7 +129,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
             }
         }
 
-        override func viewWillDisappear(_ animated: Bool) {
+        override public func viewWillDisappear(_ animated: Bool) {
             super.viewWillDisappear(animated)
 
             if (captureSession?.isRunning == true) {
@@ -137,11 +137,11 @@ public struct CodeScannerView: UIViewControllerRepresentable {
             }
         }
 
-        override var prefersStatusBarHidden: Bool {
+        override public var prefersStatusBarHidden: Bool {
             return true
         }
 
-        override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
+        override public var supportedInterfaceOrientations: UIInterfaceOrientationMask {
             return .portrait
         }
     }
