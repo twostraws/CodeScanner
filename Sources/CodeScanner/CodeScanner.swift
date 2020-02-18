@@ -88,6 +88,12 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         override public func viewDidLoad() {
             super.viewDidLoad()
 
+            
+            NotificationCenter.default.addObserver(self,
+                                                   selector: #selector(updateOrientation),
+                                                   name: Notification.Name("UIDeviceOrientationDidChangeNotification"),
+                                                   object: nil)
+            
             view.backgroundColor = UIColor.black
             captureSession = AVCaptureSession()
 
@@ -123,10 +129,22 @@ public struct CodeScannerView: UIViewControllerRepresentable {
             previewLayer.frame = view.layer.bounds
             previewLayer.videoGravity = .resizeAspectFill
             view.layer.addSublayer(previewLayer)
-
+            updateOrientation()
             captureSession.startRunning()
         }
 
+        override public func viewWillLayoutSubviews() {
+            previewLayer.frame = view.layer.bounds
+        }
+        
+        @objc func updateOrientation() {
+            guard let orientation = UIApplication.shared.windows.first?.windowScene?.interfaceOrientation else {
+                return
+            }
+            let previewConnection = captureSession.connections[1]
+            previewConnection.videoOrientation = AVCaptureVideoOrientation(rawValue: orientation.rawValue) ?? .portrait
+        }
+        
         override public func viewWillAppear(_ animated: Bool) {
             super.viewWillAppear(animated)
 
@@ -141,6 +159,8 @@ public struct CodeScannerView: UIViewControllerRepresentable {
             if (captureSession?.isRunning == true) {
                 captureSession.stopRunning()
             }
+            
+            NotificationCenter.default.removeObserver(self)
         }
 
         override public var prefersStatusBarHidden: Bool {
@@ -148,7 +168,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         }
 
         override public var supportedInterfaceOrientations: UIInterfaceOrientationMask {
-            return .portrait
+            return .all
         }
     }
     #endif
