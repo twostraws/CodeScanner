@@ -79,8 +79,8 @@ public struct CodeScannerView: UIViewControllerRepresentable {
             NSLayoutConstraint.activate([
                 stackView.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor),
                 stackView.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor),
-                stackView.topAnchor.constraint(equalTo: view.layoutMarginsGuide.topAnchor),
-                stackView.bottomAnchor.constraint(equalTo: view.layoutMarginsGuide.bottomAnchor)
+                stackView.centerXAnchor.constraint(equalTo: view.centerXAnchor)
+                stackView.centerYAnchor.constraint(equalTo: view.centerYAnchor)
             ])
         }
         
