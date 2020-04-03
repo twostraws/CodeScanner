@@ -54,7 +54,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
     }
     
     #if targetEnvironment(simulator)
-    public class ScannerViewController: UIViewController {
+    public class ScannerViewController: UIViewController,UIImagePickerControllerDelegate,UINavigationControllerDelegate{
         var delegate: ScannerCoordinator?
         
         override public func loadView() {
@@ -63,20 +63,55 @@ public struct CodeScannerView: UIViewControllerRepresentable {
             label.translatesAutoresizingMaskIntoConstraints = false
             label.numberOfLines = 0
             
-            label.text = "You're running in the simulator, which means the camera isn't available. Tap anywhere to send back some simulated data."
+            label.text = "You're running in the simulator, which means the camera isn't available."
             
-            view.addSubview(label)
+            let button = UIButton()
+            button.setTitle("Select Image from Gallery", for: .normal)
+            button.target(forAction: #selector(self.openGallery(_:)), withSender: button)
+            
+            let stackView = UIStackView()
+            stackView.axis = .vertical
+            stackView.spacing = 50
+            stackView.addArrangedSubview(label)
+            stackView.addArrangedSubview(button)
+            
+            view.addSubview(stackView)
             
             NSLayoutConstraint.activate([
-                label.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor),
-                label.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor),
-                label.topAnchor.constraint(equalTo: view.layoutMarginsGuide.topAnchor),
-                label.bottomAnchor.constraint(equalTo: view.layoutMarginsGuide.bottomAnchor)
+                stackView.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor),
+                stackView.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor),
+                stackView.topAnchor.constraint(equalTo: view.layoutMarginsGuide.topAnchor),
+                stackView.bottomAnchor.constraint(equalTo: view.layoutMarginsGuide.bottomAnchor)
             ])
         }
         
-        override public func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-            delegate?.found(code: "")
+        @objc func openGallery(_ sender: UIButton){
+            let imagePicker = UIImagePickerController()
+            imagePicker.delegate = self
+            self.present(imagePicker, animated: true, completion: nil)
+        }
+        
+        public func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]){
+            if let qrcodeImg = info[.originalImage] as? UIImage {
+                let detector:CIDetector=CIDetector(ofType: CIDetectorTypeQRCode, context: nil, options: [CIDetectorAccuracy:CIDetectorAccuracyHigh])!
+                let ciImage:CIImage=CIImage(image:qrcodeImg)!
+                var qrCodeLink=""
+                
+                let features=detector.features(in: ciImage)
+                for feature in features as! [CIQRCodeFeature] {
+                    qrCodeLink += feature.messageString!
+                }
+                
+                if qrCodeLink=="" {
+                    delegate?.didFail(reason: .badOutput)
+                }else{
+                    delegate?.found(code: qrCodeLink)
+                }
+            }
+            else{
+                print("Something went wrong")
+            }
+            self.dismiss(animated: true, completion: nil)
         }
     }
     #else
@@ -195,6 +230,24 @@ public struct CodeScannerView: UIViewControllerRepresentable {
     
     public func updateUIViewController(_ uiViewController: ScannerViewController, context: Context) {
         
+    }
+}
+
+extension UIImage {
+    func parseQR() -> [String] {
+        guard let image = CIImage(image: self) else {
+            return []
+        }
+
+        let detector = CIDetector(ofType: CIDetectorTypeQRCode,
+                                  context: nil,
+                                  options: [CIDetectorAccuracy: CIDetectorAccuracyHigh])
+
+        let features = detector?.features(in: image) ?? []
+
+        return features.compactMap { feature in
+            return (feature as? CIQRCodeFeature)?.messageString
+        }
     }
 }
 
