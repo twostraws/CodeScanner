@@ -22,7 +22,6 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         var codeFound = false
         
         init(parent: CodeScannerView) {
-            assert(parent.simulatedData.isEmpty == false, "The iOS simulator does not support using the camera, so you must set the simulatedData property of CodeScannerView.")
             self.parent = parent
         }
         
