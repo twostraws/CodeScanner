@@ -40,11 +40,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         }
         
         func found(code: String) {
-            #if targetEnvironment(simulator)
-            parent.completion(.success(parent.simulatedData))
-            #else
             parent.completion(.success(code))
-            #endif
         }
         
         func didFail(reason: ScanError) {
@@ -55,20 +51,24 @@ public struct CodeScannerView: UIViewControllerRepresentable {
     #if targetEnvironment(simulator)
     public class ScannerViewController: UIViewController,UIImagePickerControllerDelegate,UINavigationControllerDelegate{
         var delegate: ScannerCoordinator?
-        
         override public func loadView() {
             view = UIView()
+            view.isUserInteractionEnabled = true
             let label = UILabel()
             label.translatesAutoresizingMaskIntoConstraints = false
             label.numberOfLines = 0
             
             label.text = "You're running in the simulator, which means the camera isn't available."
-            
+            label.textAlignment = .center
             let button = UIButton()
+            button.translatesAutoresizingMaskIntoConstraints = false
             button.setTitle("Select Image from Gallery", for: .normal)
-            button.target(forAction: #selector(self.openGallery(_:)), withSender: button)
+            button.setTitleColor(UIColor.systemBlue, for: .normal)
+            button.setTitleColor(UIColor.gray, for: .highlighted)
+            button.addTarget(self, action: #selector(self.openGallery), for: .touchUpInside)
             
             let stackView = UIStackView()
+            stackView.translatesAutoresizingMaskIntoConstraints = false
             stackView.axis = .vertical
             stackView.spacing = 50
             stackView.addArrangedSubview(label)
@@ -77,9 +77,9 @@ public struct CodeScannerView: UIViewControllerRepresentable {
             view.addSubview(stackView)
             
             NSLayoutConstraint.activate([
+                button.heightAnchor.constraint(equalToConstant: 50),
                 stackView.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor),
                 stackView.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor),
-                stackView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
                 stackView.centerYAnchor.constraint(equalTo: view.centerYAnchor)
             ])
         }
@@ -208,12 +208,10 @@ public struct CodeScannerView: UIViewControllerRepresentable {
     #endif
     
     public let codeTypes: [AVMetadataObject.ObjectType]
-    public var simulatedData = ""
     public var completion: (Result<String, ScanError>) -> Void
     
-    public init(codeTypes: [AVMetadataObject.ObjectType], simulatedData: String = "", completion: @escaping (Result<String, ScanError>) -> Void) {
+    public init(codeTypes: [AVMetadataObject.ObjectType], completion: @escaping (Result<String, ScanError>) -> Void) {
         self.codeTypes = codeTypes
-        self.simulatedData = simulatedData
         self.completion = completion
     }
     
