@@ -124,13 +124,6 @@ public struct CodeScannerView: UIViewControllerRepresentable {
                 delegate?.didFail(reason: .badOutput)
                 return
             }
-
-            previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
-            previewLayer.frame = view.layer.bounds
-            previewLayer.videoGravity = .resizeAspectFill
-            view.layer.addSublayer(previewLayer)
-            updateOrientation()
-            captureSession.startRunning()
         }
 
         override public func viewWillLayoutSubviews() {
@@ -143,6 +136,16 @@ public struct CodeScannerView: UIViewControllerRepresentable {
             }
             let previewConnection = captureSession.connections[1]
             previewConnection.videoOrientation = AVCaptureVideoOrientation(rawValue: orientation.rawValue) ?? .portrait
+        }
+
+        override public func viewDidAppear(_ animated: Bool) {
+            super.viewDidAppear(animated)
+            previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
+            previewLayer.frame = view.layer.bounds
+            previewLayer.videoGravity = .resizeAspectFill
+            view.layer.addSublayer(previewLayer)
+            updateOrientation()
+            captureSession.startRunning()
         }
         
         override public func viewWillAppear(_ animated: Bool) {
