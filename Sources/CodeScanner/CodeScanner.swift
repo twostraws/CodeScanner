@@ -77,7 +77,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
             stackView.addArrangedSubview(button)
             
             //Adding mock button if smaple data is available
-            if delegate?.parent.simulatedData != nil{
+            if !(delegate?.parent.simulatedData.isEmpty ?? true){
                 let mockButton = UIButton()
                 mockButton.translatesAutoresizingMaskIntoConstraints = false
                 mockButton.setTitle("Mock scan with sample data", for: .normal)
