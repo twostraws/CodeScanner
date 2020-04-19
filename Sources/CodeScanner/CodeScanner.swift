@@ -68,12 +68,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
             button.setTitleColor(UIColor.gray, for: .highlighted)
             button.addTarget(self, action: #selector(self.openGallery), for: .touchUpInside)
             
-            let mockButton = UIButton()
-            mockButton.translatesAutoresizingMaskIntoConstraints = false
-            mockButton.setTitle("Mock scan with sample data", for: .normal)
-            mockButton.setTitleColor(UIColor.systemBlue, for: .normal)
-            mockButton.setTitleColor(UIColor.gray, for: .highlighted)
-            mockButton.addTarget(self, action: #selector(self.mockWithSample), for: .touchUpInside)
+            
             
             let stackView = UIStackView()
             stackView.translatesAutoresizingMaskIntoConstraints = false
@@ -81,7 +76,17 @@ public struct CodeScannerView: UIViewControllerRepresentable {
             stackView.spacing = 50
             stackView.addArrangedSubview(label)
             stackView.addArrangedSubview(button)
-            stackView.addArrangedSubView(mockButton)
+            
+            //Adding mock button if smaple data is available
+            if delegate?.parent.simulatedData != nil{
+                let mockButton = UIButton()
+                mockButton.translatesAutoresizingMaskIntoConstraints = false
+                mockButton.setTitle("Mock scan with sample data", for: .normal)
+                mockButton.setTitleColor(UIColor.systemBlue, for: .normal)
+                mockButton.setTitleColor(UIColor.gray, for: .highlighted)
+                mockButton.addTarget(self, action: #selector(self.mockWithSample), for: .touchUpInside)
+                stackView.addArrangedSubView(mockButton)
+            }
             
             view.addSubview(stackView)
             
@@ -100,7 +105,11 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         }
         
         @objc func mockWithSample(_ sender: UIButton){
-            delegate?.found(code: delegate?.parent.simulatedData)
+            guard let simulatedData = delegate?.parent.simulatedData else {
+                print("Simulated Data Not Provided!")
+                return
+            }
+            delegate?.found(code: simulatedData)
         }
         
         public func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]){
