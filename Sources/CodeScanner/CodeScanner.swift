@@ -22,6 +22,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         var codeFound = false
         
         init(parent: CodeScannerView) {
+            assert(parent.simulatedData.isEmpty == false, "The iOS simulator does not support using the camera, so you must set the simulatedData property of CodeScannerView.")
             self.parent = parent
         }
         
@@ -67,12 +68,20 @@ public struct CodeScannerView: UIViewControllerRepresentable {
             button.setTitleColor(UIColor.gray, for: .highlighted)
             button.addTarget(self, action: #selector(self.openGallery), for: .touchUpInside)
             
+            let mockButton = UIButton()
+            mockButton.translatesAutoresizingMaskIntoConstraints = false
+            mockButton.setTitle("Mock scan with sample data", for: .normal)
+            mockButton.setTitleColor(UIColor.systemBlue, for: .normal)
+            mockButton.setTitleColor(UIColor.gray, for: .highlighted)
+            mockButton.addTarget(self, action: #selector(self.mockWithSample), for: .touchUpInside)
+            
             let stackView = UIStackView()
             stackView.translatesAutoresizingMaskIntoConstraints = false
             stackView.axis = .vertical
             stackView.spacing = 50
             stackView.addArrangedSubview(label)
             stackView.addArrangedSubview(button)
+            stackView.addArrangedSubView(mockButton)
             
             view.addSubview(stackView)
             
@@ -88,6 +97,10 @@ public struct CodeScannerView: UIViewControllerRepresentable {
             let imagePicker = UIImagePickerController()
             imagePicker.delegate = self
             self.present(imagePicker, animated: true, completion: nil)
+        }
+        
+        @objc func mockWithSample(_ sender: UIButton){
+            delegate?.found(code: delegate?.parent.simulatedData)
         }
         
         public func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]){
@@ -158,13 +171,6 @@ public struct CodeScannerView: UIViewControllerRepresentable {
                 delegate?.didFail(reason: .badOutput)
                 return
             }
-
-            previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
-            previewLayer.frame = view.layer.bounds
-            previewLayer.videoGravity = .resizeAspectFill
-            view.layer.addSublayer(previewLayer)
-            updateOrientation()
-            captureSession.startRunning()
         }
 
         override public func viewWillLayoutSubviews() {
@@ -177,6 +183,16 @@ public struct CodeScannerView: UIViewControllerRepresentable {
             }
             let previewConnection = captureSession.connections[1]
             previewConnection.videoOrientation = AVCaptureVideoOrientation(rawValue: orientation.rawValue) ?? .portrait
+        }
+
+        override public func viewDidAppear(_ animated: Bool) {
+            super.viewDidAppear(animated)
+            previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
+            previewLayer.frame = view.layer.bounds
+            previewLayer.videoGravity = .resizeAspectFill
+            view.layer.addSublayer(previewLayer)
+            updateOrientation()
+            captureSession.startRunning()
         }
         
         override public func viewWillAppear(_ animated: Bool) {
@@ -208,10 +224,12 @@ public struct CodeScannerView: UIViewControllerRepresentable {
     #endif
     
     public let codeTypes: [AVMetadataObject.ObjectType]
+    public var simulatedData = ""
     public var completion: (Result<String, ScanError>) -> Void
     
-    public init(codeTypes: [AVMetadataObject.ObjectType], completion: @escaping (Result<String, ScanError>) -> Void) {
+    public init(codeTypes: [AVMetadataObject.ObjectType], simulatedData: String = "", completion: @escaping (Result<String, ScanError>) -> Void) {
         self.codeTypes = codeTypes
+        self.simulatedData = simulatedData
         self.completion = completion
     }
     
