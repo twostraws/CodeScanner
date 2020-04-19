@@ -85,7 +85,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
                 mockButton.setTitleColor(UIColor.systemBlue, for: .normal)
                 mockButton.setTitleColor(UIColor.gray, for: .highlighted)
                 mockButton.addTarget(self, action: #selector(self.mockWithSample), for: .touchUpInside)
-                stackView.addArrangedSubView(mockButton)
+                stackView.addArrangedSubview(mockButton)
             }
             
             view.addSubview(stackView)
