@@ -22,7 +22,6 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         var codeFound = false
         
         init(parent: CodeScannerView) {
-            assert(parent.simulatedData.isEmpty == false, "The iOS simulator does not support using the camera, so you must set the simulatedData property of CodeScannerView.")
             self.parent = parent
         }
         
@@ -41,11 +40,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         }
         
         func found(code: String) {
-            #if targetEnvironment(simulator)
-            parent.completion(.success(parent.simulatedData))
-            #else
             parent.completion(.success(code))
-            #endif
         }
         
         func didFail(reason: ScanError) {
@@ -54,29 +49,89 @@ public struct CodeScannerView: UIViewControllerRepresentable {
     }
     
     #if targetEnvironment(simulator)
-    public class ScannerViewController: UIViewController {
+    public class ScannerViewController: UIViewController,UIImagePickerControllerDelegate,UINavigationControllerDelegate{
         var delegate: ScannerCoordinator?
-        
         override public func loadView() {
             view = UIView()
+            view.isUserInteractionEnabled = true
             let label = UILabel()
             label.translatesAutoresizingMaskIntoConstraints = false
             label.numberOfLines = 0
             
-            label.text = "You're running in the simulator, which means the camera isn't available. Tap anywhere to send back some simulated data."
+            label.text = "You're running in the simulator, which means the camera isn't available."
+            label.textAlignment = .center
+            let button = UIButton()
+            button.translatesAutoresizingMaskIntoConstraints = false
+            button.setTitle("Select Image from Gallery", for: .normal)
+            button.setTitleColor(UIColor.systemBlue, for: .normal)
+            button.setTitleColor(UIColor.gray, for: .highlighted)
+            button.addTarget(self, action: #selector(self.openGallery), for: .touchUpInside)
             
-            view.addSubview(label)
+            
+            
+            let stackView = UIStackView()
+            stackView.translatesAutoresizingMaskIntoConstraints = false
+            stackView.axis = .vertical
+            stackView.spacing = 50
+            stackView.addArrangedSubview(label)
+            stackView.addArrangedSubview(button)
+            
+            //Adding mock button if smaple data is available
+            if !(delegate?.parent.simulatedData.isEmpty ?? true){
+                let mockButton = UIButton()
+                mockButton.translatesAutoresizingMaskIntoConstraints = false
+                mockButton.setTitle("Mock scan with sample data", for: .normal)
+                mockButton.setTitleColor(UIColor.systemBlue, for: .normal)
+                mockButton.setTitleColor(UIColor.gray, for: .highlighted)
+                mockButton.addTarget(self, action: #selector(self.mockWithSample), for: .touchUpInside)
+                stackView.addArrangedSubview(mockButton)
+            }
+            
+            view.addSubview(stackView)
             
             NSLayoutConstraint.activate([
-                label.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor),
-                label.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor),
-                label.topAnchor.constraint(equalTo: view.layoutMarginsGuide.topAnchor),
-                label.bottomAnchor.constraint(equalTo: view.layoutMarginsGuide.bottomAnchor)
+                button.heightAnchor.constraint(equalToConstant: 50),
+                stackView.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor),
+                stackView.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor),
+                stackView.centerYAnchor.constraint(equalTo: view.centerYAnchor)
             ])
         }
         
-        override public func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-            delegate?.found(code: "")
+        @objc func openGallery(_ sender: UIButton){
+            let imagePicker = UIImagePickerController()
+            imagePicker.delegate = self
+            self.present(imagePicker, animated: true, completion: nil)
+        }
+        
+        @objc func mockWithSample(_ sender: UIButton){
+            guard let simulatedData = delegate?.parent.simulatedData else {
+                print("Simulated Data Not Provided!")
+                return
+            }
+            delegate?.found(code: simulatedData)
+        }
+        
+        public func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]){
+            if let qrcodeImg = info[.originalImage] as? UIImage {
+                let detector:CIDetector=CIDetector(ofType: CIDetectorTypeQRCode, context: nil, options: [CIDetectorAccuracy:CIDetectorAccuracyHigh])!
+                let ciImage:CIImage=CIImage(image:qrcodeImg)!
+                var qrCodeLink=""
+                
+                let features=detector.features(in: ciImage)
+                for feature in features as! [CIQRCodeFeature] {
+                    qrCodeLink += feature.messageString!
+                }
+                
+                if qrCodeLink=="" {
+                    delegate?.didFail(reason: .badOutput)
+                }else{
+                    delegate?.found(code: qrCodeLink)
+                }
+            }
+            else{
+                print("Something went wrong")
+            }
+            self.dismiss(animated: true, completion: nil)
         }
     }
     #else
