@@ -170,7 +170,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         }
 
         override public func viewWillLayoutSubviews() {
-            previewLayer.frame = view.layer.bounds
+            previewLayer?.frame = view.layer.bounds
         }
 
         @objc func updateOrientation() {
