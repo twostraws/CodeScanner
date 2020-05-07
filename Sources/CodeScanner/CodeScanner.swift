@@ -177,8 +177,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
             guard let orientation = UIApplication.shared.windows.first?.windowScene?.interfaceOrientation else {
                 return
             }
-            let previewConnection = captureSession.connections[1]
-            previewConnection.videoOrientation = AVCaptureVideoOrientation(rawValue: orientation.rawValue) ?? .portrait
+            captureSession.connections.last?.videoOrientation = AVCaptureVideoOrientation(rawValue: orientation.rawValue) ?? .portrait
         }
 
         override public func viewDidAppear(_ animated: Bool) {
