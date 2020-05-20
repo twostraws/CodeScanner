@@ -19,14 +19,16 @@ You should create an instance of `CodeScannerView` with three parameters: an arr
 
 Here's some example code to create a QR code-scanning view that prints the code that was found or any error. If it's used in the simulator it will return a name, because that's provided as the simulated data:
 
-    CodeScannerView(codeTypes: [.qr], simulatedData: "Paul Hudson") { result in                    
-        switch result {
-        case .success(let code):
-            print("Found code: \(code)")
-        case .failure(let error):
-            print(error.localizedDescription)
-        }
+```swift
+CodeScannerView(codeTypes: [.qr], simulatedData: "Paul Hudson") { result in                    
+    switch result {
+    case .success(let code):
+        print("Found code: \(code)")
+    case .failure(let error):
+        print(error.localizedDescription)
     }
+}
+```
 
 Your completion closure is probably where you want to dismiss the `CodeScannerView`.
 
