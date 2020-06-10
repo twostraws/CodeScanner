@@ -17,6 +17,9 @@ You should create an instance of `CodeScannerView` with three parameters: an arr
 
 **Important:** iOS *requires* you to add the "Privacy - Camera Usage Description" key to your Info.plist file, providing a reason for why you want to access the camera.
 
+
+## Examples
+
 Here's some example code to create a QR code-scanning view that prints the code that was found or any error. If it's used in the simulator it will return a name, because that's provided as the simulated data:
 
 ```swift
@@ -31,6 +34,45 @@ CodeScannerView(codeTypes: [.qr], simulatedData: "Paul Hudson") { result in
 ```
 
 Your completion closure is probably where you want to dismiss the `CodeScannerView`.
+
+Here's an example on how to present the QR code-scanning view as a sheet and how the scanned barcode can be passed to the next view in a NavigationView:
+
+```swift
+struct QRCodeScannerExampleView: View {
+    @State var isPresentingScanner = false
+    @State var scannedCode: String?
+
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 10) {
+                if self.scannedCode != nil {
+                    NavigationLink("Next page", destination: NextView(scannedCode: scannedCode!), isActive: .constant(true)).hidden()
+                }
+                Button("Scan Code") {
+                    self.isPresentingScanner = true
+                }
+                .sheet(isPresented: $isPresentingScanner) {
+                    self.scannerSheet
+                }
+                Text("Scan a QR code to begin")
+            }
+
+        }
+    }
+
+    var scannerSheet : some View {
+        CodeScannerView(
+            codeTypes: [.qr],
+            completion: { result in
+                if case let .success(code) = result {
+                    self.scannedCode = code
+                    self.isPresentingScanner = false
+                }
+            }
+        )
+    }
+}
+```
 
 
 ## Credits
