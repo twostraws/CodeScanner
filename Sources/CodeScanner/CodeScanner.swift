@@ -40,7 +40,6 @@ public struct CodeScannerView: UIViewControllerRepresentable {
 
                 switch self.parent.scanMode {
                 case .once:
-                    
                     found(code: stringValue)
                     // make sure we only trigger scan once per use
                     isFinishScanning = true
