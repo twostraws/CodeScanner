@@ -25,7 +25,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         var parent: CodeScannerView
         var codesFound: Set<String>
         var isFinishScanning = false
-         var lastTime = Date(timeIntervalSince1970: 0)
+        var lastTime = Date(timeIntervalSince1970: 0)
 
         init(parent: CodeScannerView) {
             self.parent = parent
