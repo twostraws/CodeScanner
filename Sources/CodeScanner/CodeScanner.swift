@@ -38,24 +38,19 @@ public struct CodeScannerView: UIViewControllerRepresentable {
                 guard let stringValue = readableObject.stringValue else { return }
                 guard isFinishScanning == false else { return }
 
-                AudioServicesPlaySystemSound(SystemSoundID(kSystemSoundID_Vibrate))
-                found(code: stringValue)
-                
                 switch self.parent.scanMode {
                 case .once:
-                    AudioServicesPlaySystemSound(SystemSoundID(kSystemSoundID_Vibrate))
+                    
                     found(code: stringValue)
                     // make sure we only trigger scan once per use
                     isFinishScanning = true
                 case .oncePerCode:
                     if !codesFound.contains(stringValue) {
-                        AudioServicesPlaySystemSound(SystemSoundID(kSystemSoundID_Vibrate))
                         codesFound.insert(stringValue)
                         found(code: stringValue)
                     }
                 case .continuous:
                     if isPastScanInterval() {
-                        AudioServicesPlaySystemSound(SystemSoundID(kSystemSoundID_Vibrate))
                         found(code: stringValue)
                     }
                 }
@@ -68,6 +63,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         
         func found(code: String) {
             lastTime = Date()
+            AudioServicesPlaySystemSound(SystemSoundID(kSystemSoundID_Vibrate))
             parent.completion(.success(code))
         }
 
