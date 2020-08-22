@@ -181,7 +181,9 @@ public struct CodeScannerView: UIViewControllerRepresentable {
 
         override public func viewDidAppear(_ animated: Bool) {
             super.viewDidAppear(animated)
-            previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
+            if previewLayer == nil {
+                previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
+            }
             previewLayer.frame = view.layer.bounds
             previewLayer.videoGravity = .resizeAspectFill
             view.layer.addSublayer(previewLayer)
@@ -197,8 +199,8 @@ public struct CodeScannerView: UIViewControllerRepresentable {
             }
         }
 
-        override public func viewWillDisappear(_ animated: Bool) {
-            super.viewWillDisappear(animated)
+        override public func viewDidDisappear(_ animated: Bool) {
+            super.viewDidDisappear(animated)
 
             if (captureSession?.isRunning == true) {
                 captureSession.stopRunning()
