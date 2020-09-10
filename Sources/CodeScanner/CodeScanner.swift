@@ -220,8 +220,8 @@ public struct CodeScannerView: UIViewControllerRepresentable {
             }
         }
 
-        override public func viewWillDisappear(_ animated: Bool) {
-            super.viewWillDisappear(animated)
+        override public func viewDidDisappear(_ animated: Bool) {
+            super.viewDidDisappear(animated)
 
             if (captureSession?.isRunning == true) {
                 captureSession.stopRunning()
