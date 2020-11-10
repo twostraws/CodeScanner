@@ -210,7 +210,9 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         override public func viewWillAppear(_ animated: Bool) {
             super.viewWillAppear(animated)
             
-            previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
+            if previewLayer == nil {
+                previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
+            }
             previewLayer.frame = view.layer.bounds
             previewLayer.videoGravity = .resizeAspectFill
             view.layer.addSublayer(previewLayer)
