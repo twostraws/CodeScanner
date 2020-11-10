@@ -16,30 +16,53 @@ public struct CodeScannerView: UIViewControllerRepresentable {
     public enum ScanError: Error {
         case badInput, badOutput
     }
+    
+    public enum ScanMode {
+        case once, oncePerCode, continuous
+    }
 
     public class ScannerCoordinator: NSObject, AVCaptureMetadataOutputObjectsDelegate {
         var parent: CodeScannerView
-        var codeFound = false
+        var codesFound: Set<String>
+        var isFinishScanning = false
+        var lastTime = Date(timeIntervalSince1970: 0)
 
         init(parent: CodeScannerView) {
             self.parent = parent
+            self.codesFound = Set<String>()
         }
 
         public func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
             if let metadataObject = metadataObjects.first {
                 guard let readableObject = metadataObject as? AVMetadataMachineReadableCodeObject else { return }
                 guard let stringValue = readableObject.stringValue else { return }
-                guard codeFound == false else { return }
+                guard isFinishScanning == false else { return }
 
-                AudioServicesPlaySystemSound(SystemSoundID(kSystemSoundID_Vibrate))
-                found(code: stringValue)
-
-                // make sure we only trigger scans once per use
-                codeFound = true
+                switch self.parent.scanMode {
+                case .once:
+                    found(code: stringValue)
+                    // make sure we only trigger scan once per use
+                    isFinishScanning = true
+                case .oncePerCode:
+                    if !codesFound.contains(stringValue) {
+                        codesFound.insert(stringValue)
+                        found(code: stringValue)
+                    }
+                case .continuous:
+                    if isPastScanInterval() {
+                        found(code: stringValue)
+                    }
+                }
             }
         }
 
+        func isPastScanInterval() -> Bool {
+            return Date().timeIntervalSince(lastTime) >= self.parent.scanInterval
+        }
+        
         func found(code: String) {
+            lastTime = Date()
+            AudioServicesPlaySystemSound(SystemSoundID(kSystemSoundID_Vibrate))
             parent.completion(.success(code))
         }
 
@@ -181,24 +204,24 @@ public struct CodeScannerView: UIViewControllerRepresentable {
 
         override public func viewDidAppear(_ animated: Bool) {
             super.viewDidAppear(animated)
-            previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
-            previewLayer.frame = view.layer.bounds
-            previewLayer.videoGravity = .resizeAspectFill
-            view.layer.addSublayer(previewLayer)
             updateOrientation()
-            captureSession.startRunning()
         }
 
         override public func viewWillAppear(_ animated: Bool) {
             super.viewWillAppear(animated)
+            
+            previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
+            previewLayer.frame = view.layer.bounds
+            previewLayer.videoGravity = .resizeAspectFill
+            view.layer.addSublayer(previewLayer)
 
             if (captureSession?.isRunning == false) {
                 captureSession.startRunning()
             }
         }
 
-        override public func viewWillDisappear(_ animated: Bool) {
-            super.viewWillDisappear(animated)
+        override public func viewDidDisappear(_ animated: Bool) {
+            super.viewDidDisappear(animated)
 
             if (captureSession?.isRunning == true) {
                 captureSession.stopRunning()
@@ -218,11 +241,15 @@ public struct CodeScannerView: UIViewControllerRepresentable {
     #endif
 
     public let codeTypes: [AVMetadataObject.ObjectType]
+    public let scanMode: ScanMode
+    public let scanInterval: Double
     public var simulatedData = ""
     public var completion: (Result<String, ScanError>) -> Void
 
-    public init(codeTypes: [AVMetadataObject.ObjectType], simulatedData: String = "", completion: @escaping (Result<String, ScanError>) -> Void) {
+    public init(codeTypes: [AVMetadataObject.ObjectType], scanMode: ScanMode = .once, scanInterval: Double = 2.0, simulatedData: String = "", completion: @escaping (Result<String, ScanError>) -> Void) {
         self.codeTypes = codeTypes
+        self.scanMode = scanMode
+        self.scanInterval = scanInterval
         self.simulatedData = simulatedData
         self.completion = completion
     }
