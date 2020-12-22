@@ -150,6 +150,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         var captureSession: AVCaptureSession!
         var previewLayer: AVCaptureVideoPreviewLayer!
         var delegate: ScannerCoordinator?
+        let videoCaptureDevice = AVCaptureDevice.default(for: .video)
 
         override public func viewDidLoad() {
             super.viewDidLoad()
@@ -163,11 +164,14 @@ public struct CodeScannerView: UIViewControllerRepresentable {
             view.backgroundColor = UIColor.black
             captureSession = AVCaptureSession()
 
-            guard let videoCaptureDevice = AVCaptureDevice.default(for: .video) else { return }
+            if videoCaptureDevice == nil{
+                return
+            }
+//            guard let videoCaptureDevice = AVCaptureDevice.default(for: .video) else { return }
             let videoInput: AVCaptureDeviceInput
 
             do {
-                videoInput = try AVCaptureDeviceInput(device: videoCaptureDevice)
+                videoInput = try AVCaptureDeviceInput(device: videoCaptureDevice!)
             } catch {
                 return
             }
@@ -238,6 +242,36 @@ public struct CodeScannerView: UIViewControllerRepresentable {
 
         override public var supportedInterfaceOrientations: UIInterfaceOrientationMask {
             return .all
+        }
+        
+        /** Touch the screen for autofocus */
+        public override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+            // AutoFocus
+            if touches.first?.view == view {
+                let videoView = view
+                
+                let screenSize = videoView!.bounds.size
+                if let touchPoint = touches.first {
+                    let xPoint = touchPoint.location(in: videoView).y / screenSize.height
+                    
+                    let yPoint = 1.0 - touchPoint.location(in: videoView).x / screenSize.width
+                    let focusPoint = CGPoint(x: xPoint, y: yPoint)
+                    
+                    if let device = videoCaptureDevice {
+                        do {
+                            try device.lockForConfiguration()
+                            
+                            // Focus to the correct point, make continiuous focus and exposure so the point stays sharp when moving the device closer
+                            device.focusPointOfInterest = focusPoint
+                            device.focusMode = .continuousAutoFocus
+                            device.exposurePointOfInterest = focusPoint
+                            device.exposureMode = AVCaptureDevice.ExposureMode.continuousAutoExposure
+                            device.unlockForConfiguration()
+                        } catch {
+                        }
+                    }
+                }
+            }
         }
     }
     #endif
