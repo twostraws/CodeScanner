@@ -167,7 +167,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
             if videoCaptureDevice == nil{
                 return
             }
-//            guard let videoCaptureDevice = AVCaptureDevice.default(for: .video) else { return }
+
             let videoInput: AVCaptureDeviceInput
 
             do {
