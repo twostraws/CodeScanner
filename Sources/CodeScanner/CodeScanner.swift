@@ -151,6 +151,28 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         var previewLayer: AVCaptureVideoPreviewLayer!
         var delegate: ScannerCoordinator?
 
+        private let showViewfinder: Bool
+
+        private lazy var viewFinder: UIImageView? = {
+            guard let image = UIImage(named: "viewfinder", in: .module, with: nil) else {
+                return nil
+            }
+
+            let imageView = UIImageView(image: image)
+            imageView.translatesAutoresizingMaskIntoConstraints = false
+            return imageView
+        }()
+
+        public init(showViewfinder: Bool) {
+            self.showViewfinder = showViewfinder
+            super.init(nibName: nil, bundle: nil)
+        }
+
+        public required init?(coder: NSCoder) {
+            self.showViewfinder = false
+            super.init(coder: coder)
+        }
+
         override public func viewDidLoad() {
             super.viewDidLoad()
 
@@ -216,9 +238,23 @@ public struct CodeScannerView: UIViewControllerRepresentable {
             previewLayer.frame = view.layer.bounds
             previewLayer.videoGravity = .resizeAspectFill
             view.layer.addSublayer(previewLayer)
+            addviewfinder()
 
             if (captureSession?.isRunning == false) {
                 captureSession.startRunning()
+            }
+        }
+
+        private func addviewfinder() {
+            if showViewfinder,
+               let imageView = viewFinder {
+                view.addSubview(imageView)
+                NSLayoutConstraint.activate([
+                    imageView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+                    imageView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+                    imageView.widthAnchor.constraint(equalToConstant: 200),
+                    imageView.heightAnchor.constraint(equalToConstant: 200),
+                ])
             }
         }
 
@@ -245,12 +281,14 @@ public struct CodeScannerView: UIViewControllerRepresentable {
     public let codeTypes: [AVMetadataObject.ObjectType]
     public let scanMode: ScanMode
     public let scanInterval: Double
+    public let showViewfinder: Bool
     public var simulatedData = ""
     public var completion: (Result<String, ScanError>) -> Void
 
-    public init(codeTypes: [AVMetadataObject.ObjectType], scanMode: ScanMode = .once, scanInterval: Double = 2.0, simulatedData: String = "", completion: @escaping (Result<String, ScanError>) -> Void) {
+    public init(codeTypes: [AVMetadataObject.ObjectType], scanMode: ScanMode = .once, showViewfinder: Bool = false, scanInterval: Double = 2.0, simulatedData: String = "", completion: @escaping (Result<String, ScanError>) -> Void) {
         self.codeTypes = codeTypes
         self.scanMode = scanMode
+        self.showViewfinder = showViewfinder
         self.scanInterval = scanInterval
         self.simulatedData = simulatedData
         self.completion = completion
@@ -261,7 +299,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
     }
 
     public func makeUIViewController(context: Context) -> ScannerViewController {
-        let viewController = ScannerViewController()
+        let viewController = ScannerViewController(showViewfinder: showViewfinder)
         viewController.delegate = context.coordinator
         return viewController
     }
