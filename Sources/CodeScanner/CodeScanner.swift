@@ -81,6 +81,10 @@ public struct CodeScannerView: UIViewControllerRepresentable {
             super.init(nibName: nil, bundle: nil)
         }
 
+        required init?(coder: NSCoder) {
+            fatalError("init(coder:) has not been implemented")
+        }
+
         override public func loadView() {
             view = UIView()
             view.isUserInteractionEnabled = true
