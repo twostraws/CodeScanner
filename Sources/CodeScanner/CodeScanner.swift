@@ -74,6 +74,13 @@ public struct CodeScannerView: UIViewControllerRepresentable {
     #if targetEnvironment(simulator)
     public class ScannerViewController: UIViewController,UIImagePickerControllerDelegate,UINavigationControllerDelegate{
         var delegate: ScannerCoordinator?
+        private let showViewfinder: Bool
+
+        public init(showViewfinder: Bool = false) {
+            self.showViewfinder = showViewfinder
+            super.init(nibName: nil, bundle: nil)
+        }
+
         override public func loadView() {
             view = UIView()
             view.isUserInteractionEnabled = true
