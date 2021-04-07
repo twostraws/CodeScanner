@@ -246,16 +246,15 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         }
 
         private func addviewfinder() {
-            if showViewfinder,
-               let imageView = viewFinder {
-                view.addSubview(imageView)
-                NSLayoutConstraint.activate([
-                    imageView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-                    imageView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-                    imageView.widthAnchor.constraint(equalToConstant: 200),
-                    imageView.heightAnchor.constraint(equalToConstant: 200),
-                ])
-            }
+            guard showViewfinder, let imageView = viewFinder else { return }
+            
+            view.addSubview(imageView)
+            NSLayoutConstraint.activate([
+                imageView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+                imageView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+                imageView.widthAnchor.constraint(equalToConstant: 200),
+                imageView.heightAnchor.constraint(equalToConstant: 200),
+            ])
         }
 
         override public func viewDidDisappear(_ animated: Bool) {
