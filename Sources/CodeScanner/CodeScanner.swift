@@ -168,13 +168,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
                 return
             }
 
-            let videoInput: AVCaptureDeviceInput
-
-            do {
-                videoInput = try AVCaptureDeviceInput(device: videoCaptureDevice!)
-            } catch {
-                return
-            }
+            guard let videoInput = try? AVCaptureDeviceInput(device: videoCaptureDevice) else { return }
 
             if (captureSession.canAddInput(videoInput)) {
                 captureSession.addInput(videoInput)
@@ -246,32 +240,29 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         
         /** Touch the screen for autofocus */
         public override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-            // AutoFocus
-            if touches.first?.view == view {
-                let videoView = view
-                
-                let screenSize = videoView!.bounds.size
-                if let touchPoint = touches.first {
-                    let xPoint = touchPoint.location(in: videoView).y / screenSize.height
-                    
-                    let yPoint = 1.0 - touchPoint.location(in: videoView).x / screenSize.width
-                    let focusPoint = CGPoint(x: xPoint, y: yPoint)
-                    
-                    if let device = videoCaptureDevice {
-                        do {
-                            try device.lockForConfiguration()
-                            
-                            // Focus to the correct point, make continiuous focus and exposure so the point stays sharp when moving the device closer
-                            device.focusPointOfInterest = focusPoint
-                            device.focusMode = .continuousAutoFocus
-                            device.exposurePointOfInterest = focusPoint
-                            device.exposureMode = AVCaptureDevice.ExposureMode.continuousAutoExposure
-                            device.unlockForConfiguration()
-                        } catch {
-                        }
-                    }
-                }
+            guard touches.first?.view == view,
+                  let touchPoint = touches.first,
+                  let device = videoCaptureDevice
+            else { return }
+            
+            let videoView = view
+            let screenSize = videoView!.bounds.size
+            let xPoint = touchPoint.location(in: videoView).y / screenSize.height
+            let yPoint = 1.0 - touchPoint.location(in: videoView).x / screenSize.width
+            let focusPoint = CGPoint(x: xPoint, y: yPoint)
+            
+            do {
+                try device.lockForConfiguration()
+            } catch {
+                return
             }
+            
+            // Focus to the correct point, make continiuous focus and exposure so the point stays sharp when moving the device closer
+            device.focusPointOfInterest = focusPoint
+            device.focusMode = .continuousAutoFocus
+            device.exposurePointOfInterest = focusPoint
+            device.exposureMode = AVCaptureDevice.ExposureMode.continuousAutoExposure
+            device.unlockForConfiguration()
         }
     }
     #endif
