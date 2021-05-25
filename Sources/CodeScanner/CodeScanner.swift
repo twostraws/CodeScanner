@@ -62,7 +62,6 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         
         func found(code: String) {
             lastTime = Date()
-            AudioServicesPlaySystemSound(SystemSoundID(kSystemSoundID_Vibrate))
             parent.completion(.success(code))
         }
 
