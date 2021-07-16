@@ -24,7 +24,7 @@ let package = Package(
         .target(
             name: "CodeScanner",
             dependencies: [],
-            resources: [.process("Recources")]),
+            resources: [.process("Resources")]),
         .testTarget(
             name: "CodeScannerTests",
             dependencies: ["CodeScanner"]),
