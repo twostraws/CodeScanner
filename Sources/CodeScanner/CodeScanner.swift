@@ -227,7 +227,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         }
 
         @objc func updateOrientation() {
-            guard let orientation = UIApplication.shared.windows.first?.windowScene?.interfaceOrientation else { return }
+            guard let orientation = view.window?.windowScene?.interfaceOrientation else { return }
             guard let connection = captureSession.connections.last, connection.isVideoOrientationSupported else { return }
             connection.videoOrientation = AVCaptureVideoOrientation(rawValue: orientation.rawValue) ?? .portrait
         }
