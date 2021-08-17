@@ -32,6 +32,13 @@ public struct CodeScannerView: UIViewControllerRepresentable {
             self.codesFound = Set<String>()
         }
 
+        public func reset()
+        {
+            self.codesFound = Set<String>()
+            self.isFinishScanning = false
+            self.lastTime = Date(timeIntervalSince1970: 0)
+        }
+
         public func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
             if let metadataObject = metadataObjects.first {
                 guard let readableObject = metadataObject as? AVMetadataMachineReadableCodeObject else { return }
@@ -247,6 +254,8 @@ public struct CodeScannerView: UIViewControllerRepresentable {
             previewLayer.videoGravity = .resizeAspectFill
             view.layer.addSublayer(previewLayer)
             addviewfinder()
+
+            delegate?.reset()
 
             if (captureSession?.isRunning == false) {
                 captureSession.startRunning()
