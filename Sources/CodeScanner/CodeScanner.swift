@@ -14,7 +14,7 @@ import SwiftUI
 /// For testing inside the simulator, set the `simulatedData` property to some test data you want to send back.
 public struct CodeScannerView: UIViewControllerRepresentable {
     public enum ScanError: Error {
-        case badInput, badOutput, missingRights
+        case badInput, badOutput, initError(_ error: Error)
     }
     
     public enum ScanMode {
@@ -207,8 +207,11 @@ public struct CodeScannerView: UIViewControllerRepresentable {
                 return
             }
 
-            guard let videoInput = try? AVCaptureDeviceInput(device: videoCaptureDevice) else {
-                delegate?.didFail(reason: .missingRights)
+            let videoInput: AVCaptureDeviceInput
+            do {
+                videoInput = try AVCaptureDeviceInput(device: videoCaptureDevice)
+            } catch {
+                delegate?.didFail(reason: .initError(error))
                 return
             }
 
