@@ -12,6 +12,7 @@ import SwiftUI
 /// To use, set `codeTypes` to be an array of things to scan for, e.g. `[.qr]`, and set `completion` to
 /// a closure that will be called when scanning has finished. This will be sent the string that was detected or a `ScanError`.
 /// For testing inside the simulator, set the `simulatedData` property to some test data you want to send back.
+@available(macCatalyst 14.0, *)
 public struct CodeScannerView: UIViewControllerRepresentable {
     public enum ScanError: Error {
         case badInput, badOutput, initError(_ error: Error)
@@ -358,6 +359,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
     }
 }
 
+@available(macCatalyst 14.0, *)
 struct CodeScannerView_Previews: PreviewProvider {
     static var previews: some View {
         CodeScannerView(codeTypes: [.qr]) { result in
