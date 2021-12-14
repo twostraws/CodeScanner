@@ -8,14 +8,35 @@
     </a>
 </p>
 
-CodeScanner is a simple wrapper SwiftUI framework that makes it easy to scan codes such as QR codes and barcodes. It provides a struct, `CodeScannerView`, that can be shown inside a sheet so that all scanning occurs in one place.
+CodeScanner is a SwiftUI framework that makes it easy to scan codes such as QR codes and barcodes. It provides a view struct, `CodeScannerView`, that can be shown inside a sheet so that all scanning occurs in one place.
 
 
-## Usage
+## Basic usage
 
-You should create an instance of `CodeScannerView` with three parameters: an array of the types to scan for, some test data to send back when running in the simulator, and a closure that will be called when a result is ready. This closure must accept a `Result<String, ScanError>`, where the string is the code that was found on success and `ScanError` will be either `badInput` (if the camera cannot be accessed) or `badOutput` (if the camera is not capable of detecting codes.)
+You should create an instance of `CodeScannerView` with at least two parameters: an array of the types to scan for, and a closure that will be called when a result is ready.
+
+Your completion closure must accept a `Result<ScanResult, ScanError>`, where the success case is the code string and type that was found. For example, if you asked to scan for QR codes and bar codes, you might be told that a QR code containing the email address paul@hackingwithswift.com was found.
+
+If things go wrong, your result will contain a `ScanError` set to one of these three cases:
+
+- `badInput`, if the camera cannot be accessed
+- `badOutput`, if the camera is not capable of detecting codes
+- `initError`, if initialization failed.
 
 **Important:** iOS *requires* you to add the "Privacy - Camera Usage Description" key to your Info.plist file, providing a reason for why you want to access the camera.
+
+
+## Customization options
+
+You can provide a variety of extra customization options to `CodeScannerView` in its initializer:
+
+- `scanMode` can be `.once` to scan a single code, `.oncePerCode` to scan many codes but only trigger finding each unique code once, and `.continuous` will keep finding codes until you dismiss the scanner. Default: `.once`.
+- `scanInterval` controls how fast individual codes should be scanned when running in `.continuous` scan mode.
+- `showViewfinder` determines whether to show a box-like viewfinder over the UI. Default: false.
+- `simulatedData` allows you to provide some test data to use in Simulator, when real scanning isn’t available. Default: an empty string.
+- `shouldVibrateOnSuccess` allows you to determine whether device should vibrate when a code is found. Default: true.
+
+If you want to add UI customization, such as a dedicated Cancel button, you should wrap your `CodeScannerView` instance in a `NavigationView` and use a `toolbar()` modifier to add whatever buttons you want.
 
 
 ## Examples
@@ -23,10 +44,10 @@ You should create an instance of `CodeScannerView` with three parameters: an arr
 Here's some example code to create a QR code-scanning view that prints the code that was found or any error. If it's used in the simulator it will return a name, because that's provided as the simulated data:
 
 ```swift
-CodeScannerView(codeTypes: [.qr], simulatedData: "Paul Hudson") { result in                    
-    switch result {
-    case .success(let code):
-        print("Found code: \(code)")
+CodeScannerView(codeTypes: [.qr], simulatedData: "Paul Hudson") { response in                    
+    switch response {
+    case .success(let result):
+        print("Found code: \(result.string)")
     case .failure(let error):
         print(error.localizedDescription)
     }
@@ -35,41 +56,33 @@ CodeScannerView(codeTypes: [.qr], simulatedData: "Paul Hudson") { result in
 
 Your completion closure is probably where you want to dismiss the `CodeScannerView`.
 
-Here's an example on how to present the QR code-scanning view as a sheet and how the scanned barcode can be passed to the next view in a NavigationView:
+Here's an example on how to present the QR code-scanning view as a sheet and how the scanned barcode can be passed to the next view in a `NavigationView`:
 
 ```swift
 struct QRCodeScannerExampleView: View {
-    @State var isPresentingScanner = false
-    @State var scannedCode: String?
+    @State private var isPresentingScanner = false
+    @State private var scannedCode: String?
 
     var body: some View {
-        NavigationView {
-            VStack(spacing: 10) {
-                if self.scannedCode != nil {
-                    NavigationLink("Next page", destination: NextView(scannedCode: scannedCode!), isActive: .constant(true)).hidden()
-                }
-                Button("Scan Code") {
-                    self.isPresentingScanner = true
-                }
-                .sheet(isPresented: $isPresentingScanner) {
-                    self.scannerSheet
-                }
-                Text("Scan a QR code to begin")
+        VStack(spacing: 10) {
+            if let code = scannedCode {
+                NavigationLink("Next page", destination: NextView(scannedCode: code), isActive: .constant(true)).hidden()
             }
 
+            Button("Scan Code") {
+                isPresentingScanner = true
+            }
+
+            Text("Scan a QR code to begin")
         }
-    }
-
-    var scannerSheet : some View {
-        CodeScannerView(
-            codeTypes: [.qr],
-            completion: { result in
-                if case let .success(code) = result {
-                    self.scannedCode = code
-                    self.isPresentingScanner = false
+        .sheet(isPresented: $isPresentingScanner) {
+            CodeScannerView(codeTypes: [.qr]) { response in
+                if case let .success(result) = response {
+                    scannedCode = result.string
+                    isPresentingScanner = false
                 }
             }
-        )
+        }
     }
 }
 ```
@@ -84,7 +97,7 @@ CodeScanner was made by [Paul Hudson](https://twitter.com/twostraws), who writes
 
 MIT License.
 
-Copyright (c) 2019 Paul Hudson
+Copyright (c) 2021 Paul Hudson
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
