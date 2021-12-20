@@ -146,32 +146,38 @@ extension CodeScannerView {
                 return
             }
 
-            let videoInput: AVCaptureDeviceInput
+            func setupCaptureDevice() {
+                let videoInput: AVCaptureDeviceInput
 
-            do {
-                videoInput = try AVCaptureDeviceInput(device: videoCaptureDevice)
-            } catch {
-                delegate?.didFail(reason: .initError(error))
-                return
+                do {
+                    videoInput = try AVCaptureDeviceInput(device: videoCaptureDevice)
+                } catch {
+                    delegate?.didFail(reason: .initError(error))
+                    return
+                }
+
+                if (captureSession.canAddInput(videoInput)) {
+                    captureSession.addInput(videoInput)
+                } else {
+                    delegate?.didFail(reason: .badInput)
+                    return
+                }
+
+                let metadataOutput = AVCaptureMetadataOutput()
+
+                if (captureSession.canAddOutput(metadataOutput)) {
+                    captureSession.addOutput(metadataOutput)
+
+                    metadataOutput.setMetadataObjectsDelegate(delegate, queue: DispatchQueue.main)
+                    metadataOutput.metadataObjectTypes = delegate?.parent.codeTypes
+                } else {
+                    delegate?.didFail(reason: .badOutput)
+                    return
+                }
             }
-
-            if (captureSession.canAddInput(videoInput)) {
-                captureSession.addInput(videoInput)
-            } else {
-                delegate?.didFail(reason: .badInput)
-                return
-            }
-
-            let metadataOutput = AVCaptureMetadataOutput()
-
-            if (captureSession.canAddOutput(metadataOutput)) {
-                captureSession.addOutput(metadataOutput)
-
-                metadataOutput.setMetadataObjectsDelegate(delegate, queue: DispatchQueue.main)
-                metadataOutput.metadataObjectTypes = delegate?.parent.codeTypes
-            } else {
-                delegate?.didFail(reason: .badOutput)
-                return
+            
+            AVCaptureDevice.requestAccess(for: .video) { _ in
+                setupCaptureDevice()
             }
         }
 
