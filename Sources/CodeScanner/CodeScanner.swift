@@ -81,6 +81,17 @@ public struct CodeScannerView: UIViewControllerRepresentable {
     public func updateUIViewController(_ uiViewController: ScannerViewController, context: Context) {
 
     }
+    
+    public func torch(isOn: Bool) -> CodeScannerView {
+        if let backCamera = AVCaptureDevice.default(for: AVMediaType.video) {
+            if backCamera.hasTorch {
+                try? backCamera.lockForConfiguration()
+                backCamera.torchMode = isOn ? .on : .off
+                backCamera.unlockForConfiguration()
+            }
+        }
+        return self
+    }
 }
 
 @available(macCatalyst 14.0, *)
