@@ -15,6 +15,7 @@ extension CodeScannerView {
     public class ScannerViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
         
         var delegate: ScannerCoordinator?
+        private var isGalleryShowing: Bool = false
         private let showViewfinder: Bool
 
         public init(showViewfinder: Bool = false) {
@@ -28,6 +29,7 @@ extension CodeScannerView {
         }
         
         func openGallery() {
+            isGalleryShowing = true
             let imagePicker = UIImagePickerController()
             imagePicker.delegate = self
             present(imagePicker, animated: true, completion: nil)
@@ -38,6 +40,8 @@ extension CodeScannerView {
         }
 
         public func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
+            isGalleryShowing = false
+            
             if let qrcodeImg = info[.originalImage] as? UIImage {
                 let detector = CIDetector(ofType: CIDetectorTypeQRCode, context: nil, options: [CIDetectorAccuracy: CIDetectorAccuracyHigh])!
                 let ciImage = CIImage(image:qrcodeImg)!
@@ -60,6 +64,10 @@ extension CodeScannerView {
             }
 
             dismiss(animated: true, completion: nil)
+        }
+        
+        public func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            isGalleryShowing = false
         }
 
         #if targetEnvironment(simulator)
@@ -167,18 +175,7 @@ extension CodeScannerView {
                 return
             }
             
-            if let isTorchOn = delegate?.parent.isTorchOn,
-               let backCamera = AVCaptureDevice.default(for: AVMediaType.video),
-               backCamera.hasTorch
-            {
-                try? backCamera.lockForConfiguration()
-                backCamera.torchMode = isTorchOn ? .on : .off
-                backCamera.unlockForConfiguration()
-            }
-            
-            if delegate?.parent.shouldPresentGallery ?? false {
-                openGallery()
-            }
+            updateViewController()
         }
 
         override public func viewWillLayoutSubviews() {
@@ -277,6 +274,21 @@ extension CodeScannerView {
             device.unlockForConfiguration()
         }
         #endif
+        
+        func updateViewController() {
+            if let isTorchOn = delegate?.parent.isTorchOn,
+               let backCamera = AVCaptureDevice.default(for: AVMediaType.video),
+               backCamera.hasTorch
+            {
+                try? backCamera.lockForConfiguration()
+                backCamera.torchMode = isTorchOn ? .on : .off
+                backCamera.unlockForConfiguration()
+            }
+            
+            if delegate?.parent.shouldPresentGallery ?? false && !isGalleryShowing {
+                openGallery()
+            }
+        }
         
     }
 }

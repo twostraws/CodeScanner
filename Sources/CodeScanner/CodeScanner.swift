@@ -97,7 +97,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
     }
 
     public func updateUIViewController(_ uiViewController: ScannerViewController, context: Context) {
-
+        uiViewController.updateViewController()
     }
     
 }
