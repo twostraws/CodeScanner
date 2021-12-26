@@ -10,9 +10,10 @@ import AVFoundation
 import UIKit
 
 extension CodeScannerView {
-    #if targetEnvironment(simulator)
+    
     @available(macCatalyst 14.0, *)
     public class ScannerViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        
         var delegate: ScannerCoordinator?
         private let showViewfinder: Bool
 
@@ -22,9 +23,46 @@ extension CodeScannerView {
         }
 
         required init?(coder: NSCoder) {
-            fatalError("init(coder:) has not been implemented")
+            self.showViewfinder = false
+            super.init(coder: coder)
+        }
+        
+        func openGallery() {
+            let imagePicker = UIImagePickerController()
+            imagePicker.delegate = self
+            present(imagePicker, animated: true, completion: nil)
+        }
+        
+        @objc func openGallery(_ sender: UIButton) {
+            openGallery()
         }
 
+        public func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
+            if let qrcodeImg = info[.originalImage] as? UIImage {
+                let detector = CIDetector(ofType: CIDetectorTypeQRCode, context: nil, options: [CIDetectorAccuracy: CIDetectorAccuracyHigh])!
+                let ciImage = CIImage(image:qrcodeImg)!
+                var qrCodeLink = ""
+
+                let features = detector.features(in: ciImage)
+
+                for feature in features as! [CIQRCodeFeature] {
+                    qrCodeLink += feature.messageString!
+                }
+
+                if qrCodeLink == "" {
+                    delegate?.didFail(reason: .badOutput)
+                } else {
+                    let result = ScanResult(string: qrCodeLink, type: .qr)
+                    delegate?.found(result)
+                }
+            } else {
+                print("Something went wrong")
+            }
+
+            dismiss(animated: true, completion: nil)
+        }
+
+        #if targetEnvironment(simulator)
         override public func loadView() {
             view = UIView()
             view.isUserInteractionEnabled = true
@@ -69,47 +107,12 @@ extension CodeScannerView {
             let result = ScanResult(string: simulatedData, type: delegate?.parent.codeTypes.first ?? .qr)
             delegate?.found(result)
         }
-
-        @objc func openGallery(_ sender: UIButton) {
-            let imagePicker = UIImagePickerController()
-            imagePicker.delegate = self
-            present(imagePicker, animated: true, completion: nil)
-        }
-
-        public func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
-            if let qrcodeImg = info[.originalImage] as? UIImage {
-                let detector = CIDetector(ofType: CIDetectorTypeQRCode, context: nil, options: [CIDetectorAccuracy: CIDetectorAccuracyHigh])!
-                let ciImage = CIImage(image:qrcodeImg)!
-                var qrCodeLink = ""
-
-                let features = detector.features(in: ciImage)
-
-                for feature in features as! [CIQRCodeFeature] {
-                    qrCodeLink += feature.messageString!
-                }
-
-                if qrCodeLink == "" {
-                    delegate?.didFail(reason: .badOutput)
-                } else {
-                    let result = ScanResult(string: qrCodeLink, type: .qr)
-                    delegate?.found(result)
-                }
-            } else {
-                print("Something went wrong")
-            }
-
-            dismiss(animated: true, completion: nil)
-        }
-    }
-    #else
-    @available(macCatalyst 14.0, *)
-    public class ScannerViewController: UIViewController {
+        
+        #else
+        
         var captureSession: AVCaptureSession!
         var previewLayer: AVCaptureVideoPreviewLayer!
-        var delegate: ScannerCoordinator?
         let videoCaptureDevice = AVCaptureDevice.default(for: .video)
-
-        private let showViewfinder: Bool
 
         private lazy var viewFinder: UIImageView? = {
             guard let image = UIImage(named: "viewfinder", in: .module, with: nil) else {
@@ -120,16 +123,6 @@ extension CodeScannerView {
             imageView.translatesAutoresizingMaskIntoConstraints = false
             return imageView
         }()
-
-        public init(showViewfinder: Bool) {
-            self.showViewfinder = showViewfinder
-            super.init(nibName: nil, bundle: nil)
-        }
-
-        public required init?(coder: NSCoder) {
-            self.showViewfinder = false
-            super.init(coder: coder)
-        }
 
         override public func viewDidLoad() {
             super.viewDidLoad()
@@ -172,6 +165,19 @@ extension CodeScannerView {
             } else {
                 delegate?.didFail(reason: .badOutput)
                 return
+            }
+            
+            if let isTorchOn = delegate?.parent.isTorchOn,
+               let backCamera = AVCaptureDevice.default(for: AVMediaType.video),
+               backCamera.hasTorch
+            {
+                try? backCamera.lockForConfiguration()
+                backCamera.torchMode = isTorchOn ? .on : .off
+                backCamera.unlockForConfiguration()
+            }
+            
+            if delegate?.parent.shouldPresentGallery ?? false {
+                openGallery()
             }
         }
 
@@ -270,6 +276,7 @@ extension CodeScannerView {
             device.exposureMode = AVCaptureDevice.ExposureMode.continuousAutoExposure
             device.unlockForConfiguration()
         }
+        #endif
+        
     }
-    #endif
 }
