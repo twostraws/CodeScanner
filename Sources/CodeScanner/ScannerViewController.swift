@@ -112,7 +112,7 @@ extension CodeScannerView {
         
         var captureSession: AVCaptureSession!
         var previewLayer: AVCaptureVideoPreviewLayer!
-        let videoCaptureDevice = AVCaptureDevice.default(for: .video)
+        let fallbackVideoCaptureDevice = AVCaptureDevice.default(for: .video)
 
         private lazy var viewFinder: UIImageView? = {
             guard let image = UIImage(named: "viewfinder", in: .module, with: nil) else {
@@ -135,7 +135,7 @@ extension CodeScannerView {
             view.backgroundColor = UIColor.black
             captureSession = AVCaptureSession()
 
-            guard let videoCaptureDevice = videoCaptureDevice else {
+            guard let videoCaptureDevice = delegate?.parent.videoCaptureDevice ?? fallbackVideoCaptureDevice else {
                 return
             }
 
@@ -254,7 +254,7 @@ extension CodeScannerView {
         public override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
             guard touches.first?.view == view,
                   let touchPoint = touches.first,
-                  let device = videoCaptureDevice
+                  let device = delegate?.parent.videoCaptureDevice ?? fallbackVideoCaptureDevice
             else { return }
 
             let videoView = view

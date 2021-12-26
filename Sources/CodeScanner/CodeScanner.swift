@@ -60,8 +60,20 @@ public struct CodeScannerView: UIViewControllerRepresentable {
     public var shouldVibrateOnSuccess: Bool
     public var isTorchOn: Bool
     public var shouldPresentGallery: Bool
+    public var videoCaptureDevice: AVCaptureDevice?
 
-    public init(codeTypes: [AVMetadataObject.ObjectType], scanMode: ScanMode = .once, scanInterval: Double = 2.0, showViewfinder: Bool = false, simulatedData: String = "", shouldVibrateOnSuccess: Bool = true, isTorchOn: Bool = false, shouldPresentGallery: Bool = false, completion: @escaping (Result<ScanResult, ScanError>) -> Void) {
+    public init(
+        codeTypes: [AVMetadataObject.ObjectType],
+        scanMode: ScanMode = .once,
+        scanInterval: Double = 2.0,
+        showViewfinder: Bool = false,
+        simulatedData: String = "",
+        shouldVibrateOnSuccess: Bool = true,
+        isTorchOn: Bool = false,
+        shouldPresentGallery: Bool = false,
+        videoCaptureDevice: AVCaptureDevice? = AVCaptureDevice.default(for: .video),
+        completion: @escaping (Result<ScanResult, ScanError>) -> Void
+    ) {
         self.codeTypes = codeTypes
         self.scanMode = scanMode
         self.showViewfinder = showViewfinder
@@ -70,6 +82,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         self.shouldVibrateOnSuccess = shouldVibrateOnSuccess
         self.isTorchOn = isTorchOn
         self.shouldPresentGallery = shouldPresentGallery
+        self.videoCaptureDevice = videoCaptureDevice
         self.completion = completion
     }
 
