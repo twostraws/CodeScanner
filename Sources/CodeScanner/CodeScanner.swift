@@ -52,39 +52,15 @@ public enum ScanMode {
 public struct CodeScannerView: UIViewControllerRepresentable {
     
     public let codeTypes: [AVMetadataObject.ObjectType]
-    public let scanMode: ScanMode
-    public let scanInterval: Double
-    public let showViewfinder: Bool
+    public let scanMode: ScanMode = .once
+    public let scanInterval: Double = 2.0
+    public let showViewfinder: Bool = false
     public var simulatedData = ""
+    public var shouldVibrateOnSuccess: Bool = true
+    public var isTorchOn: Bool = false
+    public var shouldPresentGallery: Bool = false
+    public var videoCaptureDevice: AVCaptureDevice? = AVCaptureDevice.default(for: .video)
     public var completion: (Result<ScanResult, ScanError>) -> Void
-    public var shouldVibrateOnSuccess: Bool
-    public var isTorchOn: Bool
-    public var shouldPresentGallery: Bool
-    public var videoCaptureDevice: AVCaptureDevice?
-
-    public init(
-        codeTypes: [AVMetadataObject.ObjectType],
-        scanMode: ScanMode = .once,
-        scanInterval: Double = 2.0,
-        showViewfinder: Bool = false,
-        simulatedData: String = "",
-        shouldVibrateOnSuccess: Bool = true,
-        isTorchOn: Bool = false,
-        shouldPresentGallery: Bool = false,
-        videoCaptureDevice: AVCaptureDevice? = AVCaptureDevice.default(for: .video),
-        completion: @escaping (Result<ScanResult, ScanError>) -> Void
-    ) {
-        self.codeTypes = codeTypes
-        self.scanMode = scanMode
-        self.showViewfinder = showViewfinder
-        self.scanInterval = scanInterval
-        self.simulatedData = simulatedData
-        self.shouldVibrateOnSuccess = shouldVibrateOnSuccess
-        self.isTorchOn = isTorchOn
-        self.shouldPresentGallery = shouldPresentGallery
-        self.videoCaptureDevice = videoCaptureDevice
-        self.completion = completion
-    }
 
     public func makeCoordinator() -> ScannerCoordinator {
         ScannerCoordinator(parent: self)
@@ -97,7 +73,10 @@ public struct CodeScannerView: UIViewControllerRepresentable {
     }
 
     public func updateUIViewController(_ uiViewController: ScannerViewController, context: Context) {
-        uiViewController.updateViewController()
+        uiViewController.updateViewController(
+            isTorchOn: isTorchOn,
+            shouldPresentGallery: shouldPresentGallery
+        )
     }
     
 }

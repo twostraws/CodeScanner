@@ -174,8 +174,6 @@ extension CodeScannerView {
                 delegate?.didFail(reason: .badOutput)
                 return
             }
-            
-            updateViewController()
         }
 
         override public func viewWillLayoutSubviews() {
@@ -273,11 +271,11 @@ extension CodeScannerView {
             device.exposureMode = AVCaptureDevice.ExposureMode.continuousAutoExposure
             device.unlockForConfiguration()
         }
+        
         #endif
         
-        func updateViewController() {
-            if let isTorchOn = delegate?.parent.isTorchOn,
-               let backCamera = AVCaptureDevice.default(for: AVMediaType.video),
+        func updateViewController(isTorchOn: Bool, shouldPresentGallery: Bool) {
+            if let backCamera = AVCaptureDevice.default(for: AVMediaType.video),
                backCamera.hasTorch
             {
                 try? backCamera.lockForConfiguration()
@@ -285,7 +283,7 @@ extension CodeScannerView {
                 backCamera.unlockForConfiguration()
             }
             
-            if delegate?.parent.shouldPresentGallery ?? false && !isGalleryShowing {
+            if shouldPresentGallery && !isGalleryShowing {
                 openGallery()
             }
         }
