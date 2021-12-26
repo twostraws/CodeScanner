@@ -15,8 +15,16 @@ extension CodeScannerView {
     public class ScannerViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
         
         var delegate: ScannerCoordinator?
-        private var isGalleryShowing: Bool = false
         private let showViewfinder: Bool
+        
+        private var isGalleryShowing: Bool = false {
+            didSet {
+                // Update binding
+                if delegate?.parent.isGalleryPresented.wrappedValue != isGalleryShowing {
+                    delegate?.parent.isGalleryPresented.wrappedValue = isGalleryShowing
+                }
+            }
+        }
 
         public init(showViewfinder: Bool = false) {
             self.showViewfinder = showViewfinder
@@ -274,7 +282,7 @@ extension CodeScannerView {
         
         #endif
         
-        func updateViewController(isTorchOn: Bool, shouldPresentGallery: Bool) {
+        func updateViewController(isTorchOn: Bool, isGalleryPresented: Bool) {
             if let backCamera = AVCaptureDevice.default(for: AVMediaType.video),
                backCamera.hasTorch
             {
@@ -283,7 +291,7 @@ extension CodeScannerView {
                 backCamera.unlockForConfiguration()
             }
             
-            if shouldPresentGallery && !isGalleryShowing {
+            if isGalleryPresented && !isGalleryShowing {
                 openGallery()
             }
         }

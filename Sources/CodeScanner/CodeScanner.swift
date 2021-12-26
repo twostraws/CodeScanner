@@ -58,7 +58,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
     public var simulatedData = ""
     public var shouldVibrateOnSuccess: Bool
     public var isTorchOn: Bool
-    public var shouldPresentGallery: Bool
+    public var isGalleryPresented: Binding<Bool>
     public var videoCaptureDevice: AVCaptureDevice?
     public var completion: (Result<ScanResult, ScanError>) -> Void
 
@@ -70,7 +70,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         simulatedData: String = "",
         shouldVibrateOnSuccess: Bool = true,
         isTorchOn: Bool = false,
-        shouldPresentGallery: Bool = false,
+        isGalleryPresented: Binding<Bool> = .constant(false),
         videoCaptureDevice: AVCaptureDevice? = AVCaptureDevice.default(for: .video),
         completion: @escaping (Result<ScanResult, ScanError>) -> Void
     ) {
@@ -81,7 +81,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         self.simulatedData = simulatedData
         self.shouldVibrateOnSuccess = shouldVibrateOnSuccess
         self.isTorchOn = isTorchOn
-        self.shouldPresentGallery = shouldPresentGallery
+        self.isGalleryPresented = isGalleryPresented
         self.videoCaptureDevice = videoCaptureDevice
         self.completion = completion
     }
@@ -99,7 +99,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
     public func updateUIViewController(_ uiViewController: ScannerViewController, context: Context) {
         uiViewController.updateViewController(
             isTorchOn: isTorchOn,
-            shouldPresentGallery: shouldPresentGallery
+            isGalleryPresented: isGalleryPresented.wrappedValue
         )
     }
     
