@@ -50,22 +50,40 @@ public enum ScanMode {
 /// For testing inside the simulator, set the `simulatedData` property to some test data you want to send back.
 @available(macCatalyst 14.0, *)
 public struct CodeScannerView: UIViewControllerRepresentable {
+    
     public let codeTypes: [AVMetadataObject.ObjectType]
     public let scanMode: ScanMode
     public let scanInterval: Double
     public let showViewfinder: Bool
     public var simulatedData = ""
-    public var completion: (Result<ScanResult, ScanError>) -> Void
     public var shouldVibrateOnSuccess: Bool
+    public var isTorchOn: Bool
+    public var isGalleryPresented: Binding<Bool>
+    public var videoCaptureDevice: AVCaptureDevice?
+    public var completion: (Result<ScanResult, ScanError>) -> Void
 
-    public init(codeTypes: [AVMetadataObject.ObjectType], scanMode: ScanMode = .once, scanInterval: Double = 2.0, showViewfinder: Bool = false, simulatedData: String = "", shouldVibrateOnSuccess: Bool = true, completion: @escaping (Result<ScanResult, ScanError>) -> Void) {
+    public init(
+        codeTypes: [AVMetadataObject.ObjectType],
+        scanMode: ScanMode = .once,
+        scanInterval: Double = 2.0,
+        showViewfinder: Bool = false,
+        simulatedData: String = "",
+        shouldVibrateOnSuccess: Bool = true,
+        isTorchOn: Bool = false,
+        isGalleryPresented: Binding<Bool> = .constant(false),
+        videoCaptureDevice: AVCaptureDevice? = AVCaptureDevice.default(for: .video),
+        completion: @escaping (Result<ScanResult, ScanError>) -> Void
+    ) {
         self.codeTypes = codeTypes
         self.scanMode = scanMode
         self.showViewfinder = showViewfinder
         self.scanInterval = scanInterval
         self.simulatedData = simulatedData
-        self.completion = completion
         self.shouldVibrateOnSuccess = shouldVibrateOnSuccess
+        self.isTorchOn = isTorchOn
+        self.isGalleryPresented = isGalleryPresented
+        self.videoCaptureDevice = videoCaptureDevice
+        self.completion = completion
     }
 
     public func makeCoordinator() -> ScannerCoordinator {
@@ -79,8 +97,12 @@ public struct CodeScannerView: UIViewControllerRepresentable {
     }
 
     public func updateUIViewController(_ uiViewController: ScannerViewController, context: Context) {
-
+        uiViewController.updateViewController(
+            isTorchOn: isTorchOn,
+            isGalleryPresented: isGalleryPresented.wrappedValue
+        )
     }
+    
 }
 
 @available(macCatalyst 14.0, *)
