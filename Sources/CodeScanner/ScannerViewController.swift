@@ -43,7 +43,7 @@ extension CodeScannerView {
             present(imagePicker, animated: true, completion: nil)
         }
         
-        @objc func openGallery(_ sender: UIButton) {
+        @objc func openGalleryFromButton(_ sender: UIButton) {
             openGallery()
         }
 
@@ -94,7 +94,7 @@ extension CodeScannerView {
             button.setTitle("Select a custom image", for: .normal)
             button.setTitleColor(UIColor.systemBlue, for: .normal)
             button.setTitleColor(UIColor.gray, for: .highlighted)
-            button.addTarget(self, action: #selector(openGallery), for: .touchUpInside)
+            button.addTarget(self, action: #selector(openGalleryFromButton), for: .touchUpInside)
 
             let stackView = UIStackView()
             stackView.translatesAutoresizingMaskIntoConstraints = false
