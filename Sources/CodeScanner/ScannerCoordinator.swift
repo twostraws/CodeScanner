@@ -9,6 +9,7 @@
 import AVFoundation
 import SwiftUI
 
+@available(macCatalyst 14.0, *)
 extension CodeScannerView {
     @available(macCatalyst 14.0, *)
     public class ScannerCoordinator: NSObject, AVCaptureMetadataOutputObjectsDelegate {
