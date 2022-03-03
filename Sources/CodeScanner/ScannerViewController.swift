@@ -142,46 +142,9 @@ extension CodeScannerView {
 
         override public func viewDidLoad() {
             super.viewDidLoad()
-
-            NotificationCenter.default.addObserver(self,
-                                                   selector: #selector(updateOrientation),
-                                                   name: Notification.Name("UIDeviceOrientationDidChangeNotification"),
-                                                   object: nil)
-
-            view.backgroundColor = UIColor.black
-            captureSession = AVCaptureSession()
-
-            guard let videoCaptureDevice = delegate?.parent.videoCaptureDevice ?? fallbackVideoCaptureDevice else {
-                return
-            }
-
-            let videoInput: AVCaptureDeviceInput
-
-            do {
-                videoInput = try AVCaptureDeviceInput(device: videoCaptureDevice)
-            } catch {
-                delegate?.didFail(reason: .initError(error))
-                return
-            }
-
-            if (captureSession.canAddInput(videoInput)) {
-                captureSession.addInput(videoInput)
-            } else {
-                delegate?.didFail(reason: .badInput)
-                return
-            }
-
-            let metadataOutput = AVCaptureMetadataOutput()
-
-            if (captureSession.canAddOutput(metadataOutput)) {
-                captureSession.addOutput(metadataOutput)
-
-                metadataOutput.setMetadataObjectsDelegate(delegate, queue: DispatchQueue.main)
-                metadataOutput.metadataObjectTypes = delegate?.parent.codeTypes
-            } else {
-                delegate?.didFail(reason: .badOutput)
-                return
-            }
+            self.addOrientationDidChangeObserver()
+            self.setBackgroundColor()
+            self.handleCameraPermission()
         }
 
         override public func viewWillLayoutSubviews() {
@@ -217,6 +180,82 @@ extension CodeScannerView {
                 DispatchQueue.global(qos: .userInteractive).async {
                     self.captureSession.startRunning()
                 }
+            }
+        }
+      
+        private func handleCameraPermission() {
+          switch AVCaptureDevice.authorizationStatus(for: .video) {
+          case .denied, .restricted:
+            break
+          case .notDetermined:
+            self.requestCameraAccess {
+              self.setupCaptureDevice()
+            }
+          case .authorized:
+            self.setupCaptureDevice()
+            return
+          default:
+            break
+          }
+        }
+
+      private func requestCameraAccess(completion: (() -> Void)?) {
+          AVCaptureDevice.requestAccess(for: .video) { [weak self] status in
+            guard let self = self,
+                  status else {
+              self?.delegate?.didFail(reason: .badInput)
+              return
+            }
+            completion?()
+          }
+        }
+      
+        private func addOrientationDidChangeObserver() {
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(updateOrientation),
+                name: Notification.Name("UIDeviceOrientationDidChangeNotification"),
+                object: nil
+            )
+        }
+      
+        private func setBackgroundColor(_ color: UIColor = .black) {
+            view.backgroundColor = color
+        }
+      
+        private func setupCaptureDevice() {
+            captureSession = AVCaptureSession()
+
+            guard let videoCaptureDevice = delegate?.parent.videoCaptureDevice ?? fallbackVideoCaptureDevice else {
+                return
+            }
+
+            let videoInput: AVCaptureDeviceInput
+
+            do {
+                videoInput = try AVCaptureDeviceInput(device: videoCaptureDevice)
+            } catch {
+                delegate?.didFail(reason: .initError(error))
+                return
+            }
+
+            if (captureSession.canAddInput(videoInput)) {
+                captureSession.addInput(videoInput)
+            } else {
+                delegate?.didFail(reason: .badInput)
+                return
+            }
+
+            let metadataOutput = AVCaptureMetadataOutput()
+
+            if (captureSession.canAddOutput(metadataOutput)) {
+                captureSession.addOutput(metadataOutput)
+
+                metadataOutput.setMetadataObjectsDelegate(delegate, queue: DispatchQueue.main)
+                metadataOutput.metadataObjectTypes = delegate?.parent.codeTypes
+            } else {
+                delegate?.didFail(reason: .badOutput)
+                return
             }
         }
 
