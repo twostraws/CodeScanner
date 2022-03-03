@@ -19,6 +19,9 @@ public enum ScanError: Error {
 
     /// Initialization failed.
     case initError(_ error: Error)
+  
+    /// The camera permission is denied 
+    case permissionDenied
 }
 
 /// The result from a successful scan: the string that was scanned, and also the type of data that was found.
