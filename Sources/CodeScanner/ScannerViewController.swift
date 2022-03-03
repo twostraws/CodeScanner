@@ -201,8 +201,7 @@ extension CodeScannerView {
 
       private func requestCameraAccess(completion: (() -> Void)?) {
           AVCaptureDevice.requestAccess(for: .video) { [weak self] status in
-            guard let self = self,
-                  status else {
+            guard status else {
               self?.delegate?.didFail(reason: .badInput)
               return
             }
