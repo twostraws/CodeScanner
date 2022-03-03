@@ -214,7 +214,7 @@ extension CodeScannerView {
             delegate?.reset()
 
             if (captureSession?.isRunning == false) {
-                DispatchQueue.global(qos: .userInitiated).async {
+                DispatchQueue.global(qos: .userInteractive).async {
                     self.captureSession.startRunning()
                 }
             }
@@ -237,7 +237,7 @@ extension CodeScannerView {
             super.viewDidDisappear(animated)
 
             if (captureSession?.isRunning == true) {
-                DispatchQueue.global(qos: .userInitiated).async {
+                DispatchQueue.global(qos: .userInteractive).async {
                     self.captureSession.stopRunning()
                 }
             }
