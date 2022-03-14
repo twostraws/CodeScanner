@@ -139,6 +139,15 @@ extension CodeScannerView {
             imageView.translatesAutoresizingMaskIntoConstraints = false
             return imageView
         }()
+        
+        private lazy var manualCaptureButton: UIButton = {
+            let button = UIButton(type: .system)
+            let image = UIImage(named: "capture", in: .module, with: nil)
+            button.setBackgroundImage(image, for: .normal)
+            button.addTarget(self, action: #selector(manualCapturePressed), for: .touchUpInside)
+            button.translatesAutoresizingMaskIntoConstraints = false
+            return button
+        }()
 
         override public func viewDidLoad() {
             super.viewDidLoad()
@@ -280,9 +289,28 @@ extension CodeScannerView {
             device.unlockForConfiguration()
         }
         
+        @objc func manualCapturePressed(_ sender: Any?) {
+            self.delegate?.readyManualCapture()
+        }
+        
+        func showManualCaptureButton(_ isManualCapture: Bool) {
+            if manualCaptureButton.superview == nil {
+                view.addSubview(manualCaptureButton)
+                NSLayoutConstraint.activate([
+                    manualCaptureButton.heightAnchor.constraint(equalToConstant: 60),
+                    manualCaptureButton.widthAnchor.constraint(equalTo: manualCaptureButton.heightAnchor),
+                    view.centerXAnchor.constraint(equalTo: manualCaptureButton.centerXAnchor),
+                    view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: manualCaptureButton.bottomAnchor, constant: 32)
+                ])
+            }
+            
+            view.bringSubviewToFront(manualCaptureButton)
+            manualCaptureButton.isHidden = !isManualCapture
+        }
+        
         #endif
         
-        func updateViewController(isTorchOn: Bool, isGalleryPresented: Bool) {
+        func updateViewController(isTorchOn: Bool, isGalleryPresented: Bool, isManualCapture: Bool) {
             if let backCamera = AVCaptureDevice.default(for: AVMediaType.video),
                backCamera.hasTorch
             {
@@ -294,6 +322,10 @@ extension CodeScannerView {
             if isGalleryPresented && !isGalleryShowing {
                 openGallery()
             }
+            
+            #if !targetEnvironment(simulator)
+            showManualCaptureButton(isManualCapture)
+            #endif
         }
         
     }

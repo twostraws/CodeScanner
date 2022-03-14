@@ -26,6 +26,12 @@ extension CodeScannerView {
             didFinishScanning = false
             lastTime = Date(timeIntervalSince1970: 0)
         }
+        
+        public func readyManualCapture() {
+            guard parent.scanMode == .manual else { return }
+            self.reset()
+            lastTime = Date()
+        }
 
         public func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
             if let metadataObject = metadataObjects.first {
@@ -40,6 +46,12 @@ extension CodeScannerView {
                     // make sure we only trigger scan once per use
                     didFinishScanning = true
 
+                case .manual:
+                    if !didFinishScanning, isWithinManualCaptureInterval() {
+                        found(result)
+                        didFinishScanning = true
+                    }
+                    
                 case .oncePerCode:
                     if !codesFound.contains(stringValue) {
                         codesFound.insert(stringValue)
@@ -56,6 +68,10 @@ extension CodeScannerView {
 
         func isPastScanInterval() -> Bool {
             Date().timeIntervalSince(lastTime) >= parent.scanInterval
+        }
+        
+        func isWithinManualCaptureInterval() -> Bool {
+            Date().timeIntervalSince(lastTime) <= 0.5
         }
 
         func found(_ result: ScanResult) {
