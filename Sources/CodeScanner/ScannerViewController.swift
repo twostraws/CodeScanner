@@ -257,7 +257,8 @@ extension CodeScannerView {
         public override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
             guard touches.first?.view == view,
                   let touchPoint = touches.first,
-                  let device = delegate?.parent.videoCaptureDevice ?? fallbackVideoCaptureDevice
+                  let device = delegate?.parent.videoCaptureDevice ?? fallbackVideoCaptureDevice,
+                  device.isFocusPointOfInterestSupported
             else { return }
 
             let videoView = view
