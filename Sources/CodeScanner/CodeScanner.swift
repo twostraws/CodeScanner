@@ -42,6 +42,9 @@ public enum ScanMode {
 
     /// Keep scanning all codes until dismissed.
     case continuous
+
+    /// Scan only when capture button is tapped.
+    case manual
 }
 
 /// A SwiftUI view that is able to scan barcodes, QR codes, and more, and send back what was found.
@@ -97,9 +100,11 @@ public struct CodeScannerView: UIViewControllerRepresentable {
     }
 
     public func updateUIViewController(_ uiViewController: ScannerViewController, context: Context) {
+        context.coordinator.parent = self
         uiViewController.updateViewController(
             isTorchOn: isTorchOn,
-            isGalleryPresented: isGalleryPresented.wrappedValue
+            isGalleryPresented: isGalleryPresented.wrappedValue,
+            isManualCapture: scanMode == .manual
         )
     }
     
