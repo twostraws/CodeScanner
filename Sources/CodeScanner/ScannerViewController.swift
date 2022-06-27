@@ -164,39 +164,32 @@ extension CodeScannerView {
                 return
             }
 
-            AVCaptureDevice.requestAccess(for: .video) { _ in
-                
-                DispatchQueue.main.async {
-                    self.setNeedsStatusBarAppearanceUpdate()
-                }
-                
-                let videoInput: AVCaptureDeviceInput
-                
-                do {
-                    videoInput = try AVCaptureDeviceInput(device: videoCaptureDevice)
-                } catch {
-                    self.delegate?.didFail(reason: .initError(error))
-                    return
-                }
-                
-                if (self.captureSession.canAddInput(videoInput)) {
-                    self.captureSession.addInput(videoInput)
-                } else {
-                    self.delegate?.didFail(reason: .badInput)
-                    return
-                }
-                
-                let metadataOutput = AVCaptureMetadataOutput()
-                
-                if (self.captureSession.canAddOutput(metadataOutput)) {
-                    self.captureSession.addOutput(metadataOutput)
-                    
-                    metadataOutput.setMetadataObjectsDelegate(self.delegate, queue: DispatchQueue.main)
-                    metadataOutput.metadataObjectTypes = self.delegate?.parent.codeTypes
-                } else {
-                    self.delegate?.didFail(reason: .badOutput)
-                    return
-                }
+            let videoInput: AVCaptureDeviceInput
+
+            do {
+                videoInput = try AVCaptureDeviceInput(device: videoCaptureDevice)
+            } catch {
+                delegate?.didFail(reason: .initError(error))
+                return
+            }
+
+            if (captureSession.canAddInput(videoInput)) {
+                captureSession.addInput(videoInput)
+            } else {
+                delegate?.didFail(reason: .badInput)
+                return
+            }
+
+            let metadataOutput = AVCaptureMetadataOutput()
+
+            if (captureSession.canAddOutput(metadataOutput)) {
+                captureSession.addOutput(metadataOutput)
+
+                metadataOutput.setMetadataObjectsDelegate(delegate, queue: DispatchQueue.main)
+                metadataOutput.metadataObjectTypes = delegate?.parent.codeTypes
+            } else {
+                delegate?.didFail(reason: .badOutput)
+                return
             }
         }
 
