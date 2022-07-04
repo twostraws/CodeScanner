@@ -151,13 +151,87 @@ extension CodeScannerView {
 
         override public func viewDidLoad() {
             super.viewDidLoad()
+            self.addOrientationDidChangeObserver()
+            self.setBackgroundColor()
+            self.handleCameraPermission()
+        }
 
-            NotificationCenter.default.addObserver(self,
-                                                   selector: #selector(updateOrientation),
-                                                   name: Notification.Name("UIDeviceOrientationDidChangeNotification"),
-                                                   object: nil)
+        override public func viewWillLayoutSubviews() {
+            previewLayer?.frame = view.layer.bounds
+        }
 
-            view.backgroundColor = UIColor.black
+        @objc func updateOrientation() {
+            guard let orientation = view.window?.windowScene?.interfaceOrientation else { return }
+            guard let connection = captureSession.connections.last, connection.isVideoOrientationSupported else { return }
+            connection.videoOrientation = AVCaptureVideoOrientation(rawValue: orientation.rawValue) ?? .portrait
+        }
+
+        override public func viewDidAppear(_ animated: Bool) {
+            super.viewDidAppear(animated)
+            updateOrientation()
+        }
+
+        override public func viewWillAppear(_ animated: Bool) {
+            super.viewWillAppear(animated)
+
+            if previewLayer == nil {
+                previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
+            }
+
+            previewLayer.frame = view.layer.bounds
+            previewLayer.videoGravity = .resizeAspectFill
+            view.layer.addSublayer(previewLayer)
+            addviewfinder()
+
+            delegate?.reset()
+
+            if (captureSession?.isRunning == false) {
+                DispatchQueue.global(qos: .userInteractive).async {
+                    self.captureSession.startRunning()
+                }
+            }
+        }
+      
+        private func handleCameraPermission() {
+          switch AVCaptureDevice.authorizationStatus(for: .video) {
+          case .denied, .restricted:
+            break
+          case .notDetermined:
+            self.requestCameraAccess {
+              self.setupCaptureDevice()
+            }
+          case .authorized:
+            self.setupCaptureDevice()
+            return
+          default:
+            break
+          }
+        }
+
+      private func requestCameraAccess(completion: (() -> Void)?) {
+          AVCaptureDevice.requestAccess(for: .video) { [weak self] status in
+            guard status else {
+              self?.delegate?.didFail(reason: .permissionDenied)
+              return
+            }
+            completion?()
+          }
+        }
+      
+        private func addOrientationDidChangeObserver() {
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(updateOrientation),
+                name: Notification.Name("UIDeviceOrientationDidChangeNotification"),
+                object: nil
+            )
+        }
+      
+        private func setBackgroundColor(_ color: UIColor = .black) {
+            view.backgroundColor = color
+        }
+      
+        private func setupCaptureDevice() {
             captureSession = AVCaptureSession()
 
             guard let videoCaptureDevice = delegate?.parent.videoCaptureDevice ?? fallbackVideoCaptureDevice else {
@@ -193,42 +267,6 @@ extension CodeScannerView {
             }
         }
 
-        override public func viewWillLayoutSubviews() {
-            previewLayer?.frame = view.layer.bounds
-        }
-
-        @objc func updateOrientation() {
-            guard let orientation = view.window?.windowScene?.interfaceOrientation else { return }
-            guard let connection = captureSession.connections.last, connection.isVideoOrientationSupported else { return }
-            connection.videoOrientation = AVCaptureVideoOrientation(rawValue: orientation.rawValue) ?? .portrait
-        }
-
-        override public func viewDidAppear(_ animated: Bool) {
-            super.viewDidAppear(animated)
-            updateOrientation()
-        }
-
-        override public func viewWillAppear(_ animated: Bool) {
-            super.viewWillAppear(animated)
-
-            if previewLayer == nil {
-                previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
-            }
-
-            previewLayer.frame = view.layer.bounds
-            previewLayer.videoGravity = .resizeAspectFill
-            view.layer.addSublayer(previewLayer)
-            addviewfinder()
-
-            delegate?.reset()
-
-            if (captureSession?.isRunning == false) {
-                DispatchQueue.global(qos: .userInitiated).async {
-                    self.captureSession.startRunning()
-                }
-            }
-        }
-
         private func addviewfinder() {
             guard showViewfinder, let imageView = viewFinder else { return }
 
@@ -246,7 +284,7 @@ extension CodeScannerView {
             super.viewDidDisappear(animated)
 
             if (captureSession?.isRunning == true) {
-                DispatchQueue.global(qos: .userInitiated).async {
+                DispatchQueue.global(qos: .userInteractive).async {
                     self.captureSession.stopRunning()
                 }
             }
