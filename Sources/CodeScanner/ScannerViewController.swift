@@ -126,7 +126,7 @@ extension CodeScannerView {
         
         #else
         
-        var captureSession: AVCaptureSession!
+        var captureSession: AVCaptureSession?
         var previewLayer: AVCaptureVideoPreviewLayer!
         let fallbackVideoCaptureDevice = AVCaptureDevice.default(for: .video)
 
@@ -162,7 +162,7 @@ extension CodeScannerView {
 
         @objc func updateOrientation() {
             guard let orientation = view.window?.windowScene?.interfaceOrientation else { return }
-            guard let connection = captureSession.connections.last, connection.isVideoOrientationSupported else { return }
+            guard let connection = captureSession?.connections.last, connection.isVideoOrientationSupported else { return }
             connection.videoOrientation = AVCaptureVideoOrientation(rawValue: orientation.rawValue) ?? .portrait
         }
 
@@ -174,6 +174,14 @@ extension CodeScannerView {
         override public func viewWillAppear(_ animated: Bool) {
             super.viewWillAppear(animated)
 
+            setupSession()
+        }
+      
+        private func setupSession() {
+            guard let captureSession = captureSession else {
+                return
+            }
+            
             if previewLayer == nil {
                 previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
             }
@@ -185,37 +193,41 @@ extension CodeScannerView {
 
             delegate?.reset()
 
-            if (captureSession?.isRunning == false) {
+            if (captureSession.isRunning == false) {
                 DispatchQueue.global(qos: .userInteractive).async {
-                    self.captureSession.startRunning()
+                    self.captureSession?.startRunning()
                 }
             }
         }
-      
+
         private func handleCameraPermission() {
-          switch AVCaptureDevice.authorizationStatus(for: .video) {
-          case .denied, .restricted:
-            break
-          case .notDetermined:
-            self.requestCameraAccess {
-              self.setupCaptureDevice()
+            switch AVCaptureDevice.authorizationStatus(for: .video) {
+                case .denied, .restricted:
+                    break
+                case .notDetermined:
+                    self.requestCameraAccess {
+                        self.setupCaptureDevice()
+                        DispatchQueue.main.async {
+                            self.setupSession()
+                        }
+                    }
+                case .authorized:
+                    self.setupCaptureDevice()
+                    self.setupSession()
+                    
+                default:
+                    break
             }
-          case .authorized:
-            self.setupCaptureDevice()
-            return
-          default:
-            break
-          }
         }
 
-      private func requestCameraAccess(completion: (() -> Void)?) {
-          AVCaptureDevice.requestAccess(for: .video) { [weak self] status in
-            guard status else {
-              self?.delegate?.didFail(reason: .permissionDenied)
-              return
+        private func requestCameraAccess(completion: (() -> Void)?) {
+            AVCaptureDevice.requestAccess(for: .video) { [weak self] status in
+                guard status else {
+                    self?.delegate?.didFail(reason: .permissionDenied)
+                    return
+                }
+                completion?()
             }
-            completion?()
-          }
         }
       
         private func addOrientationDidChangeObserver() {
@@ -247,8 +259,8 @@ extension CodeScannerView {
                 return
             }
 
-            if (captureSession.canAddInput(videoInput)) {
-                captureSession.addInput(videoInput)
+            if (captureSession!.canAddInput(videoInput)) {
+                captureSession!.addInput(videoInput)
             } else {
                 delegate?.didFail(reason: .badInput)
                 return
@@ -256,8 +268,8 @@ extension CodeScannerView {
 
             let metadataOutput = AVCaptureMetadataOutput()
 
-            if (captureSession.canAddOutput(metadataOutput)) {
-                captureSession.addOutput(metadataOutput)
+            if (captureSession!.canAddOutput(metadataOutput)) {
+                captureSession!.addOutput(metadataOutput)
 
                 metadataOutput.setMetadataObjectsDelegate(delegate, queue: DispatchQueue.main)
                 metadataOutput.metadataObjectTypes = delegate?.parent.codeTypes
@@ -285,7 +297,7 @@ extension CodeScannerView {
 
             if (captureSession?.isRunning == true) {
                 DispatchQueue.global(qos: .userInteractive).async {
-                    self.captureSession.stopRunning()
+                    self.captureSession?.stopRunning()
                 }
             }
 
