@@ -202,8 +202,10 @@ extension CodeScannerView {
 
         private func handleCameraPermission() {
             switch AVCaptureDevice.authorizationStatus(for: .video) {
-                case .denied, .restricted:
+                case .restricted:
                     break
+                case .denied:
+                    self.delegate?.didFail(reason: .permissionDenied)
                 case .notDetermined:
                     self.requestCameraAccess {
                         self.setupCaptureDevice()
