@@ -152,12 +152,9 @@ extension CodeScannerView {
         private lazy var manualSelectButton: UIButton = {
             let button = UIButton(type: .system)
             let image = UIImage(systemName: "photo.on.rectangle")
-            let background = UIImage(systemName: "rectangle.fill")?.withTintColor(.systemBackground, renderingMode: .alwaysOriginal)
+            let background = UIImage(systemName: "capsule.fill")?.withTintColor(.systemBackground, renderingMode: .alwaysOriginal)
             button.setImage(image, for: .normal)
             button.setBackgroundImage(background, for: .normal)
-            button.contentVerticalAlignment = .fill
-            button.contentHorizontalAlignment = .fill
-            button.contentEdgeInsets =  UIEdgeInsets(top: 10, left: 5, bottom: 10, right: 5)
             button.addTarget(self, action: #selector(openGalleryFromButton), for: .touchUpInside)
             button.translatesAutoresizingMaskIntoConstraints = false
             return button
@@ -379,10 +376,10 @@ extension CodeScannerView {
             if manualSelectButton.superview == nil {
                 view.addSubview(manualSelectButton)
                 NSLayoutConstraint.activate([
-                    manualSelectButton.heightAnchor.constraint(equalToConstant: 60),
-                    manualSelectButton.widthAnchor.constraint(equalTo: manualSelectButton.heightAnchor),
+                    manualSelectButton.heightAnchor.constraint(equalToConstant: 50),
+                    manualSelectButton.widthAnchor.constraint(equalToConstant: 60),
                     view.centerXAnchor.constraint(equalTo: manualSelectButton.centerXAnchor),
-                    view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: manualSelectButton.bottomAnchor, constant: 64)
+                    view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: manualSelectButton.bottomAnchor, constant: 32)
                 ])
             }
             
