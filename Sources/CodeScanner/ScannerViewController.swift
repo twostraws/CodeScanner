@@ -76,6 +76,7 @@ extension CodeScannerView {
         
         public func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
             isGalleryShowing = false
+            dismiss(animated: true, completion: nil)
         }
 
         #if targetEnvironment(simulator)
