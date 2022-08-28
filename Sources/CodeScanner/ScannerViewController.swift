@@ -12,21 +12,25 @@ import UIKit
 @available(macCatalyst 14.0, *)
 extension CodeScannerView {
     
-    public class ScannerViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+    public class ScannerViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate, AVCaptureMetadataOutputObjectsDelegate {
         
-        var delegate: ScannerCoordinator?
+        var parentView: CodeScannerView!
+        var codesFound = Set<String>()
+        var didFinishScanning = false
+        var lastTime = Date(timeIntervalSince1970: 0)
         private let showViewfinder: Bool
         
         private var isGalleryShowing: Bool = false {
             didSet {
                 // Update binding
-                if delegate?.parent.isGalleryPresented.wrappedValue != isGalleryShowing {
-                    delegate?.parent.isGalleryPresented.wrappedValue = isGalleryShowing
+                if parentView.isGalleryPresented.wrappedValue != isGalleryShowing {
+                    parentView.isGalleryPresented.wrappedValue = isGalleryShowing
                 }
             }
         }
 
-        public init(showViewfinder: Bool = false) {
+        public init(showViewfinder: Bool = false, parentView: CodeScannerView) {
+            self.parentView = parentView
             self.showViewfinder = showViewfinder
             super.init(nibName: nil, bundle: nil)
         }
@@ -62,10 +66,10 @@ extension CodeScannerView {
                 }
 
                 if qrCodeLink == "" {
-                    delegate?.didFail(reason: .badOutput)
+                    didFail(reason: .badOutput)
                 } else {
                     let result = ScanResult(string: qrCodeLink, type: .qr)
-                    delegate?.found(result)
+                    found(result)
                 }
             } else {
                 print("Something went wrong")
@@ -203,7 +207,7 @@ extension CodeScannerView {
             view.layer.addSublayer(previewLayer)
             addviewfinder()
 
-            delegate?.reset()
+            reset()
 
             if (captureSession.isRunning == false) {
                 DispatchQueue.global(qos: .userInteractive).async {
@@ -217,7 +221,7 @@ extension CodeScannerView {
                 case .restricted:
                     break
                 case .denied:
-                    self.delegate?.didFail(reason: .permissionDenied)
+                    self.didFail(reason: .permissionDenied)
                 case .notDetermined:
                     self.requestCameraAccess {
                         self.setupCaptureDevice()
@@ -237,7 +241,7 @@ extension CodeScannerView {
         private func requestCameraAccess(completion: (() -> Void)?) {
             AVCaptureDevice.requestAccess(for: .video) { [weak self] status in
                 guard status else {
-                    self?.delegate?.didFail(reason: .permissionDenied)
+                    self?.didFail(reason: .permissionDenied)
                     return
                 }
                 completion?()
@@ -260,7 +264,7 @@ extension CodeScannerView {
         private func setupCaptureDevice() {
             captureSession = AVCaptureSession()
 
-            guard let videoCaptureDevice = delegate?.parent.videoCaptureDevice ?? fallbackVideoCaptureDevice else {
+            guard let videoCaptureDevice = parentView.videoCaptureDevice ?? fallbackVideoCaptureDevice else {
                 return
             }
 
@@ -269,14 +273,14 @@ extension CodeScannerView {
             do {
                 videoInput = try AVCaptureDeviceInput(device: videoCaptureDevice)
             } catch {
-                delegate?.didFail(reason: .initError(error))
+                didFail(reason: .initError(error))
                 return
             }
 
             if (captureSession!.canAddInput(videoInput)) {
                 captureSession!.addInput(videoInput)
             } else {
-                delegate?.didFail(reason: .badInput)
+                didFail(reason: .badInput)
                 return
             }
 
@@ -285,10 +289,10 @@ extension CodeScannerView {
             if (captureSession!.canAddOutput(metadataOutput)) {
                 captureSession!.addOutput(metadataOutput)
 
-                metadataOutput.setMetadataObjectsDelegate(delegate, queue: DispatchQueue.main)
-                metadataOutput.metadataObjectTypes = delegate?.parent.codeTypes
+                metadataOutput.setMetadataObjectsDelegate(self, queue: DispatchQueue.main)
+                metadataOutput.metadataObjectTypes = parentView.codeTypes
             } else {
-                delegate?.didFail(reason: .badOutput)
+                didFail(reason: .badOutput)
                 return
             }
         }
@@ -330,7 +334,7 @@ extension CodeScannerView {
         public override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
             guard touches.first?.view == view,
                   let touchPoint = touches.first,
-                  let device = delegate?.parent.videoCaptureDevice ?? fallbackVideoCaptureDevice,
+                  let device = parentView.videoCaptureDevice ?? fallbackVideoCaptureDevice,
                   device.isFocusPointOfInterestSupported
             else { return }
 
@@ -355,7 +359,7 @@ extension CodeScannerView {
         }
         
         @objc func manualCapturePressed(_ sender: Any?) {
-            self.delegate?.readyManualCapture()
+            self.readyManualCapture()
         }
         
         func showManualCaptureButton(_ isManualCapture: Bool) {
@@ -406,6 +410,73 @@ extension CodeScannerView {
             showManualCaptureButton(isManualCapture)
             showManualSelectButton(isManualSelect)
             #endif
+        }
+        
+        public func reset() {
+            codesFound.removeAll()
+            didFinishScanning = false
+            lastTime = Date(timeIntervalSince1970: 0)
+        }
+        
+        public func readyManualCapture() {
+            guard parentView.scanMode == .manual else { return }
+            self.reset()
+            lastTime = Date()
+        }
+
+        public func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
+            if let metadataObject = metadataObjects.first {
+                guard let readableObject = metadataObject as? AVMetadataMachineReadableCodeObject else { return }
+                guard let stringValue = readableObject.stringValue else { return }
+                guard didFinishScanning == false else { return }
+                let result = ScanResult(string: stringValue, type: readableObject.type)
+
+                switch parentView.scanMode {
+                case .once:
+                    found(result)
+                    // make sure we only trigger scan once per use
+                    didFinishScanning = true
+
+                case .manual:
+                    if !didFinishScanning, isWithinManualCaptureInterval() {
+                        found(result)
+                        didFinishScanning = true
+                    }
+                    
+                case .oncePerCode:
+                    if !codesFound.contains(stringValue) {
+                        codesFound.insert(stringValue)
+                        found(result)
+                    }
+
+                case .continuous:
+                    if isPastScanInterval() {
+                        found(result)
+                    }
+                }
+            }
+        }
+
+        func isPastScanInterval() -> Bool {
+            Date().timeIntervalSince(lastTime) >= parentView.scanInterval
+        }
+        
+        func isWithinManualCaptureInterval() -> Bool {
+            Date().timeIntervalSince(lastTime) <= 0.5
+        }
+
+        func found(_ result: ScanResult) {
+            lastTime = Date()
+
+            if parentView.shouldVibrateOnSuccess {
+                AudioServicesPlaySystemSound(SystemSoundID(kSystemSoundID_Vibrate))
+            }
+
+            parentView.completion(.success(result))
+        }
+
+        func didFail(reason: ScanError) {
+            parentView.completion(.failure(reason))
         }
         
     }
