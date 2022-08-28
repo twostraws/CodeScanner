@@ -59,6 +59,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
     
     public let codeTypes: [AVMetadataObject.ObjectType]
     public let scanMode: ScanMode
+    public let manualSelect: Bool
     public let scanInterval: Double
     public let showViewfinder: Bool
     public var simulatedData = ""
@@ -71,6 +72,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
     public init(
         codeTypes: [AVMetadataObject.ObjectType],
         scanMode: ScanMode = .once,
+        manualSelect: Bool = false,
         scanInterval: Double = 2.0,
         showViewfinder: Bool = false,
         simulatedData: String = "",
@@ -82,6 +84,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
     ) {
         self.codeTypes = codeTypes
         self.scanMode = scanMode
+        self.manualSelect = manualSelect
         self.showViewfinder = showViewfinder
         self.scanInterval = scanInterval
         self.simulatedData = simulatedData
@@ -107,7 +110,8 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         uiViewController.updateViewController(
             isTorchOn: isTorchOn,
             isGalleryPresented: isGalleryPresented.wrappedValue,
-            isManualCapture: scanMode == .manual
+            isManualCapture: scanMode == .manual,
+            isManualSelect: manualSelect
         )
     }
     
