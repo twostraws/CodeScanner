@@ -96,18 +96,12 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         self.completion = completion
     }
 
-    public func makeCoordinator() -> ScannerCoordinator {
-        ScannerCoordinator(parent: self)
-    }
-
     public func makeUIViewController(context: Context) -> ScannerViewController {
-        let viewController = ScannerViewController(showViewfinder: showViewfinder)
-        viewController.delegate = context.coordinator
-        return viewController
+        return ScannerViewController(showViewfinder: showViewfinder, parentView: self)
     }
 
     public func updateUIViewController(_ uiViewController: ScannerViewController, context: Context) {
-        context.coordinator.parent = self
+        uiViewController.parentView = self
         uiViewController.updateViewController(
             isTorchOn: isTorchOn,
             isGalleryPresented: isGalleryPresented.wrappedValue,
