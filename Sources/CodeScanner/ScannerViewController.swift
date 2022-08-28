@@ -9,9 +9,9 @@
 import AVFoundation
 import UIKit
 
+@available(macCatalyst 14.0, *)
 extension CodeScannerView {
     
-    @available(macCatalyst 14.0, *)
     public class ScannerViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
         
         var delegate: ScannerCoordinator?
