@@ -21,7 +21,7 @@ jobs:
 
     - name: Show eligible build destinations
       run: xcodebuild -showdestinations -scheme CodeScanner
-    - name: Build and test ( mac Catalyst 12.0)
-      run: xcodebuild test -scheme CodeScanner -destination 'platform=macOS,arch=x86_64,variant=Mac Catalyst'
-    - name: Build and test ( iOS 15.0)
-      run: xcodebuild test -scheme CodeScanner -destination 'platform=iOS Simulator,OS=15.0,name=iPhone 12 Pro'
+    - name: Build ( mac Catalyst 12.0)
+      run: xcodebuild build -scheme CodeScanner -destination 'platform=macOS,arch=x86_64,variant=Mac Catalyst'
+    - name: Build ( iOS 15.0)
+      run: xcodebuild build -scheme CodeScanner -destination 'platform=iOS Simulator,OS=15.0,name=iPhone 12 Pro'
