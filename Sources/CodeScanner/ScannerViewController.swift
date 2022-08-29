@@ -119,14 +119,11 @@ extension CodeScannerView {
         }
 
         override public func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-            guard let simulatedData = delegate?.parent.simulatedData else {
-                print("Simulated Data Not Provided!")
-                return
-            }
-
             // Send back their simulated data, as if it was one of the types they were scanning for
-            let result = ScanResult(string: simulatedData, type: delegate?.parent.codeTypes.first ?? .qr)
-            delegate?.found(result)
+            found(ScanResult(
+                string: parentView.simulatedData,
+                type: parentView.codeTypes.first ?? .qr
+            ))
         }
         
         #else
