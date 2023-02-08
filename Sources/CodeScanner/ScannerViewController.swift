@@ -488,6 +488,8 @@ extension CodeScannerView {
         
     }
 }
+
+@available(macCatalyst 14.0, *)
 extension CodeScannerView.ScannerViewController: AVCapturePhotoCaptureDelegate {
     public func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
         isCapturing = false
