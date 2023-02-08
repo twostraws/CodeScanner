@@ -13,7 +13,9 @@ import UIKit
 extension CodeScannerView {
     
     public class ScannerViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate, AVCaptureMetadataOutputObjectsDelegate {
-        
+        private let photoOutput = AVCapturePhotoOutput()
+        private var isCapturing = false
+        private var handler: ((UIImage) -> Void)?
         var parentView: CodeScannerView!
         var codesFound = Set<String>()
         var didFinishScanning = false
@@ -68,7 +70,7 @@ extension CodeScannerView {
                 if qrCodeLink == "" {
                     didFail(reason: .badOutput)
                 } else {
-                    let result = ScanResult(string: qrCodeLink, type: .qr)
+                    let result = ScanResult(string: qrCodeLink, type: .qr, image: qrcodeImg)
                     found(result)
                 }
             } else {
@@ -122,7 +124,7 @@ extension CodeScannerView {
             // Send back their simulated data, as if it was one of the types they were scanning for
             found(ScanResult(
                 string: parentView.simulatedData,
-                type: parentView.codeTypes.first ?? .qr
+                type: parentView.codeTypes.first ?? .qr, image: nil
             ))
         }
         
@@ -280,12 +282,11 @@ extension CodeScannerView {
                 didFail(reason: .badInput)
                 return
             }
-
             let metadataOutput = AVCaptureMetadataOutput()
 
             if (captureSession!.canAddOutput(metadataOutput)) {
                 captureSession!.addOutput(metadataOutput)
-
+                captureSession?.addOutput(photoOutput)
                 metadataOutput.setMetadataObjectsDelegate(self, queue: DispatchQueue.main)
                 metadataOutput.metadataObjectTypes = parentView.codeTypes
             } else {
@@ -425,32 +426,41 @@ extension CodeScannerView {
             if let metadataObject = metadataObjects.first {
                 guard let readableObject = metadataObject as? AVMetadataMachineReadableCodeObject else { return }
                 guard let stringValue = readableObject.stringValue else { return }
+                
                 guard didFinishScanning == false else { return }
-                let result = ScanResult(string: stringValue, type: readableObject.type)
-
-                switch parentView.scanMode {
-                case .once:
-                    found(result)
-                    // make sure we only trigger scan once per use
-                    didFinishScanning = true
-
-                case .manual:
-                    if !didFinishScanning, isWithinManualCaptureInterval() {
-                        found(result)
-                        didFinishScanning = true
-                    }
+                
+                let photoSettings = AVCapturePhotoSettings()
+                guard !isCapturing else { return }
+                isCapturing = true
+                
+                handler = { [self] image in
+                    let result = ScanResult(string: stringValue, type: readableObject.type, image: image)
                     
-                case .oncePerCode:
-                    if !codesFound.contains(stringValue) {
-                        codesFound.insert(stringValue)
+                    switch parentView.scanMode {
+                    case .once:
                         found(result)
-                    }
-
-                case .continuous:
-                    if isPastScanInterval() {
-                        found(result)
+                        // make sure we only trigger scan once per use
+                        didFinishScanning = true
+                        
+                    case .manual:
+                        if !didFinishScanning, isWithinManualCaptureInterval() {
+                            found(result)
+                            didFinishScanning = true
+                        }
+                        
+                    case .oncePerCode:
+                        if !codesFound.contains(stringValue) {
+                            codesFound.insert(stringValue)
+                            found(result)
+                        }
+                        
+                    case .continuous:
+                        if isPastScanInterval() {
+                            found(result)
+                        }
                     }
                 }
+                photoOutput.capturePhoto(with: photoSettings, delegate: self)
             }
         }
 
@@ -477,4 +487,18 @@ extension CodeScannerView {
         }
         
     }
+}
+extension CodeScannerView.ScannerViewController: AVCapturePhotoCaptureDelegate {
+    public func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
+        isCapturing = false
+        guard let imageData = photo.fileDataRepresentation() else {
+            print("Error while generating image from photo capture data.");
+            return
+        }
+        guard let qrImage = UIImage(data: imageData) else {
+            print("Unable to generate UIImage from image data.");
+            return
+        }
+        handler?(qrImage)
+     }
 }
