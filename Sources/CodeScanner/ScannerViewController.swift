@@ -491,7 +491,12 @@ extension CodeScannerView {
 
 @available(macCatalyst 14.0, *)
 extension CodeScannerView.ScannerViewController: AVCapturePhotoCaptureDelegate {
-    public func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
+    
+    public func photoOutput(
+        _ output: AVCapturePhotoOutput,
+        didFinishProcessingPhoto photo: AVCapturePhoto,
+        error: Error?
+    ) {
         isCapturing = false
         guard let imageData = photo.fileDataRepresentation() else {
             print("Error while generating image from photo capture data.");
@@ -502,5 +507,20 @@ extension CodeScannerView.ScannerViewController: AVCapturePhotoCaptureDelegate {
             return
         }
         handler?(qrImage)
-     }
+    }
+    
+    public func photoOutput(
+        _ output: AVCapturePhotoOutput,
+        willCapturePhotoFor resolvedSettings: AVCaptureResolvedPhotoSettings
+    ) {
+        AudioServicesDisposeSystemSoundID(1108)
+    }
+    
+    public func photoOutput(
+        _ output: AVCapturePhotoOutput,
+        didCapturePhotoFor resolvedSettings: AVCaptureResolvedPhotoSettings
+    ) {
+        AudioServicesDisposeSystemSoundID(1108)
+    }
+    
 }
