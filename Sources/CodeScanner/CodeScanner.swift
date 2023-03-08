@@ -83,7 +83,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         shouldVibrateOnSuccess: Bool = true,
         isTorchOn: Bool = false,
         isGalleryPresented: Binding<Bool> = .constant(false),
-        videoCaptureDevice: AVCaptureDevice? = AVCaptureDevice.default(for: .video),
+        videoCaptureDevice: AVCaptureDevice? = AVCaptureDevice.bestForVideo,
         completion: @escaping (Result<ScanResult, ScanError>) -> Void
     ) {
         self.codeTypes = codeTypes
@@ -111,6 +111,16 @@ public struct CodeScannerView: UIViewControllerRepresentable {
             isManualCapture: scanMode == .manual,
             isManualSelect: manualSelect
         )
+    }
+    
+}
+
+public extension AVCaptureDevice {
+    
+    /// This returns the Ultra Wide Camera on capable devices and the default Camera for Video otherwise.
+    static var bestForVideo: AVCaptureDevice? {
+        let deviceHasUltraWideCamera = !AVCaptureDevice.DiscoverySession(deviceTypes: [.builtInUltraWideCamera], mediaType: .video, position: .back).devices.isEmpty
+        return deviceHasUltraWideCamera ? AVCaptureDevice.default(.builtInUltraWideCamera, for: .video, position: .back) : AVCaptureDevice.default(for: .video)
     }
     
 }
