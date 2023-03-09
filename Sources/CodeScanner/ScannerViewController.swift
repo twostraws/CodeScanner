@@ -524,3 +524,14 @@ extension CodeScannerView.ScannerViewController: AVCapturePhotoCaptureDelegate {
     }
     
 }
+
+@available(macCatalyst 14.0, *)
+public extension AVCaptureDevice {
+    
+    /// This returns the Ultra Wide Camera on capable devices and the default Camera for Video otherwise.
+    static var bestForVideo: AVCaptureDevice? {
+        let deviceHasUltraWideCamera = !AVCaptureDevice.DiscoverySession(deviceTypes: [.builtInUltraWideCamera], mediaType: .video, position: .back).devices.isEmpty
+        return deviceHasUltraWideCamera ? AVCaptureDevice.default(.builtInUltraWideCamera, for: .video, position: .back) : AVCaptureDevice.default(for: .video)
+    }
+    
+}
