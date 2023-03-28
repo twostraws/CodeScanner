@@ -64,15 +64,16 @@ extension CodeScannerView {
                 let features = detector.features(in: ciImage)
 
                 for feature in features as! [CIQRCodeFeature] {
-                    qrCodeLink += feature.messageString!
+                    qrCodeLink = feature.messageString!
+                    if qrCodeLink == "" {
+                        didFail(reason: .badOutput)
+                    } else {
+                        let result = ScanResult(string: qrCodeLink, type: .qr, image: qrcodeImg)
+                        found(result)
+                    }
+
                 }
 
-                if qrCodeLink == "" {
-                    didFail(reason: .badOutput)
-                } else {
-                    let result = ScanResult(string: qrCodeLink, type: .qr, image: qrcodeImg)
-                    found(result)
-                }
             } else {
                 print("Something went wrong")
             }
