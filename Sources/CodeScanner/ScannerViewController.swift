@@ -178,7 +178,18 @@ extension CodeScannerView {
         @objc func updateOrientation() {
             guard let orientation = view.window?.windowScene?.interfaceOrientation else { return }
             guard let connection = captureSession?.connections.last, connection.isVideoOrientationSupported else { return }
-            connection.videoOrientation = AVCaptureVideoOrientation(rawValue: orientation.rawValue) ?? .portrait
+            switch orientation {
+            case .portrait:
+                connection.videoOrientation = .portrait
+            case .landscapeLeft:
+                connection.videoOrientation = .landscapeLeft
+            case .landscapeRight:
+                connection.videoOrientation = .landscapeRight
+            case .portraitUpsideDown:
+                connection.videoOrientation = .portraitUpsideDown
+            default:
+                connection.videoOrientation = .portrait
+            }
         }
 
         override public func viewDidAppear(_ animated: Bool) {
