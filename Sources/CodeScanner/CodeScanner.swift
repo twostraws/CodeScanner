@@ -37,6 +37,9 @@ public struct ScanResult {
     
     /// The image of the code that was matched
     public let image: UIImage?
+  
+    /// The corner coordinates of the scanned code.
+    public let corners: [CGPoint]
 }
 
 /// The operating mode for CodeScannerView.
