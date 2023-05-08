@@ -68,7 +68,13 @@ extension CodeScannerView {
                     if qrCodeLink == "" {
                         didFail(reason: .badOutput)
                     } else {
-                        let result = ScanResult(string: qrCodeLink, type: .qr, image: qrcodeImg)
+                        let corners = [
+                            feature.bottomLeft,
+                            feature.bottomRight,
+                            feature.topRight,
+                            feature.topLeft
+                        ]
+                        let result = ScanResult(string: qrCodeLink, type: .qr, image: qrcodeImg, corners: corners)
                         found(result)
                     }
 
@@ -125,7 +131,7 @@ extension CodeScannerView {
             // Send back their simulated data, as if it was one of the types they were scanning for
             found(ScanResult(
                 string: parentView.simulatedData,
-                type: parentView.codeTypes.first ?? .qr, image: nil
+                type: parentView.codeTypes.first ?? .qr, image: nil, corners: []
             ))
         }
         
@@ -446,7 +452,7 @@ extension CodeScannerView {
                 isCapturing = true
                 
                 handler = { [self] image in
-                    let result = ScanResult(string: stringValue, type: readableObject.type, image: image)
+                    let result = ScanResult(string: stringValue, type: readableObject.type, image: image, corners: readableObject.corners)
                     
                     switch parentView.scanMode {
                     case .once:
