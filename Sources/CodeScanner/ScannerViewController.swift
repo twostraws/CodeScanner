@@ -94,7 +94,7 @@ extension CodeScannerView {
         }
 
         public func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
-            // Galery is no longer being presented
+            // Gallery is no longer being presented
             isGalleryShowing = false
         }
 
