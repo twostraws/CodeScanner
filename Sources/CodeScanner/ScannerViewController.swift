@@ -22,6 +22,8 @@ extension CodeScannerView {
         var lastTime = Date(timeIntervalSince1970: 0)
         private let showViewfinder: Bool
         
+        let fallbackVideoCaptureDevice = AVCaptureDevice.default(for: .video)
+        
         private var isGalleryShowing: Bool = false {
             didSet {
                 // Update binding
@@ -145,7 +147,6 @@ extension CodeScannerView {
         
         var captureSession: AVCaptureSession?
         var previewLayer: AVCaptureVideoPreviewLayer!
-        let fallbackVideoCaptureDevice = AVCaptureDevice.default(for: .video)
 
         private lazy var viewFinder: UIImageView? = {
             guard let image = UIImage(named: "viewfinder", in: .module, with: nil) else {
