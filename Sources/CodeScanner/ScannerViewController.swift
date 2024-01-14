@@ -528,6 +528,8 @@ extension CodeScannerView.ScannerViewController: UIAdaptivePresentationControlle
     }
 }
 
+// MARK: - AVCapturePhotoCaptureDelegate
+
 @available(macCatalyst 14.0, *)
 extension CodeScannerView.ScannerViewController: AVCapturePhotoCaptureDelegate {
     
@@ -563,6 +565,8 @@ extension CodeScannerView.ScannerViewController: AVCapturePhotoCaptureDelegate {
     }
     
 }
+
+// MARK: - AVCaptureDevice
 
 @available(macCatalyst 14.0, *)
 public extension AVCaptureDevice {
