@@ -12,7 +12,7 @@ import UIKit
 @available(macCatalyst 14.0, *)
 extension CodeScannerView {
     
-    public class ScannerViewController: UIViewController, UINavigationControllerDelegate {
+    public final class ScannerViewController: UIViewController, UINavigationControllerDelegate {
         private let photoOutput = AVCapturePhotoOutput()
         private var isCapturing = false
         private var handler: ((UIImage?) -> Void)?
@@ -174,7 +174,7 @@ extension CodeScannerView {
         }
       
         private func setupSession() {
-            guard let captureSession = captureSession else {
+            guard let captureSession else {
                 return
             }
             
