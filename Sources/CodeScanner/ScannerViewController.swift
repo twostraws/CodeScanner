@@ -12,7 +12,7 @@ import UIKit
 @available(macCatalyst 14.0, *)
 extension CodeScannerView {
     
-    public class ScannerViewController: UIViewController, UINavigationControllerDelegate, UIAdaptivePresentationControllerDelegate {
+    public class ScannerViewController: UIViewController, UINavigationControllerDelegate {
         private let photoOutput = AVCapturePhotoOutput()
         private var isCapturing = false
         private var handler: ((UIImage) -> Void)?
@@ -54,11 +54,6 @@ extension CodeScannerView {
         
         @objc func openGalleryFromButton(_ sender: UIButton) {
             openGallery()
-        }
-
-        public func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
-            // Gallery is no longer being presented
-            isGalleryShowing = false
         }
 
         #if targetEnvironment(simulator)
@@ -521,6 +516,15 @@ extension CodeScannerView.ScannerViewController: UIImagePickerControllerDelegate
     public func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
         isGalleryShowing = false
         dismiss(animated: true, completion: nil)
+    }
+}
+
+// MARK: - UIAdaptivePresentationControllerDelegate
+
+extension CodeScannerView.ScannerViewController: UIAdaptivePresentationControllerDelegate {
+    public func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+        // Gallery is no longer being presented
+        isGalleryShowing = false
     }
 }
 
