@@ -12,7 +12,7 @@ import UIKit
 @available(macCatalyst 14.0, *)
 extension CodeScannerView {
     
-    public class ScannerViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate, AVCaptureMetadataOutputObjectsDelegate, UIAdaptivePresentationControllerDelegate {
+    public class ScannerViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UIAdaptivePresentationControllerDelegate {
         private let photoOutput = AVCapturePhotoOutput()
         private var isCapturing = false
         private var handler: ((UIImage) -> Void)?
@@ -449,48 +449,6 @@ extension CodeScannerView {
             lastTime = Date()
         }
 
-        public func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
-            if let metadataObject = metadataObjects.first {
-                guard let readableObject = metadataObject as? AVMetadataMachineReadableCodeObject else { return }
-                guard let stringValue = readableObject.stringValue else { return }
-                
-                guard didFinishScanning == false else { return }
-                
-                let photoSettings = AVCapturePhotoSettings()
-                guard !isCapturing else { return }
-                isCapturing = true
-                
-                handler = { [self] image in
-                    let result = ScanResult(string: stringValue, type: readableObject.type, image: image, corners: readableObject.corners)
-                    
-                    switch parentView.scanMode {
-                    case .once:
-                        found(result)
-                        // make sure we only trigger scan once per use
-                        didFinishScanning = true
-                        
-                    case .manual:
-                        if !didFinishScanning, isWithinManualCaptureInterval() {
-                            found(result)
-                            didFinishScanning = true
-                        }
-                        
-                    case .oncePerCode:
-                        if !codesFound.contains(stringValue) {
-                            codesFound.insert(stringValue)
-                            found(result)
-                        }
-                        
-                    case .continuous:
-                        if isPastScanInterval() {
-                            found(result)
-                        }
-                    }
-                }
-                photoOutput.capturePhoto(with: photoSettings, delegate: self)
-            }
-        }
-
         func isPastScanInterval() -> Bool {
             Date().timeIntervalSince(lastTime) >= parentView.scanInterval
         }
@@ -513,6 +471,52 @@ extension CodeScannerView {
             parentView.completion(.failure(reason))
         }
         
+    }
+}
+
+// MARK: - AVCaptureMetadataOutputObjectsDelegate
+
+extension CodeScannerView.ScannerViewController: AVCaptureMetadataOutputObjectsDelegate {
+    public func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
+        if let metadataObject = metadataObjects.first {
+            guard let readableObject = metadataObject as? AVMetadataMachineReadableCodeObject else { return }
+            guard let stringValue = readableObject.stringValue else { return }
+
+            guard didFinishScanning == false else { return }
+
+            let photoSettings = AVCapturePhotoSettings()
+            guard !isCapturing else { return }
+            isCapturing = true
+
+            handler = { [self] image in
+                let result = ScanResult(string: stringValue, type: readableObject.type, image: image, corners: readableObject.corners)
+
+                switch parentView.scanMode {
+                case .once:
+                    found(result)
+                    // make sure we only trigger scan once per use
+                    didFinishScanning = true
+
+                case .manual:
+                    if !didFinishScanning, isWithinManualCaptureInterval() {
+                        found(result)
+                        didFinishScanning = true
+                    }
+
+                case .oncePerCode:
+                    if !codesFound.contains(stringValue) {
+                        codesFound.insert(stringValue)
+                        found(result)
+                    }
+
+                case .continuous:
+                    if isPastScanInterval() {
+                        found(result)
+                    }
+                }
+            }
+            photoOutput.capturePhoto(with: photoSettings, delegate: self)
+        }
     }
 }
 
