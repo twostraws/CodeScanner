@@ -12,7 +12,7 @@ import UIKit
 @available(macCatalyst 14.0, *)
 extension CodeScannerView {
     
-    public class ScannerViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UIAdaptivePresentationControllerDelegate {
+    public class ScannerViewController: UIViewController, UINavigationControllerDelegate, UIAdaptivePresentationControllerDelegate {
         private let photoOutput = AVCapturePhotoOutput()
         private var isCapturing = false
         private var handler: ((UIImage) -> Void)?
@@ -54,45 +54,6 @@ extension CodeScannerView {
         
         @objc func openGalleryFromButton(_ sender: UIButton) {
             openGallery()
-        }
-
-        public func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
-            isGalleryShowing = false
-            
-            if let qrcodeImg = info[.originalImage] as? UIImage {
-                let detector = CIDetector(ofType: CIDetectorTypeQRCode, context: nil, options: [CIDetectorAccuracy: CIDetectorAccuracyHigh])!
-                let ciImage = CIImage(image:qrcodeImg)!
-                var qrCodeLink = ""
-
-                let features = detector.features(in: ciImage)
-
-                for feature in features as! [CIQRCodeFeature] {
-                    qrCodeLink = feature.messageString!
-                    if qrCodeLink == "" {
-                        didFail(reason: .badOutput)
-                    } else {
-                        let corners = [
-                            feature.bottomLeft,
-                            feature.bottomRight,
-                            feature.topRight,
-                            feature.topLeft
-                        ]
-                        let result = ScanResult(string: qrCodeLink, type: .qr, image: qrcodeImg, corners: corners)
-                        found(result)
-                    }
-
-                }
-
-            } else {
-                print("Something went wrong")
-            }
-
-            dismiss(animated: true, completion: nil)
-        }
-        
-        public func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            isGalleryShowing = false
-            dismiss(animated: true, completion: nil)
         }
 
         public func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
@@ -517,6 +478,49 @@ extension CodeScannerView.ScannerViewController: AVCaptureMetadataOutputObjectsD
             }
             photoOutput.capturePhoto(with: photoSettings, delegate: self)
         }
+    }
+}
+
+// MARK: - UIImagePickerControllerDelegate
+
+extension CodeScannerView.ScannerViewController: UIImagePickerControllerDelegate {
+    public func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
+        isGalleryShowing = false
+
+        if let qrcodeImg = info[.originalImage] as? UIImage {
+            let detector = CIDetector(ofType: CIDetectorTypeQRCode, context: nil, options: [CIDetectorAccuracy: CIDetectorAccuracyHigh])!
+            let ciImage = CIImage(image:qrcodeImg)!
+            var qrCodeLink = ""
+
+            let features = detector.features(in: ciImage)
+
+            for feature in features as! [CIQRCodeFeature] {
+                qrCodeLink = feature.messageString!
+                if qrCodeLink == "" {
+                    didFail(reason: .badOutput)
+                } else {
+                    let corners = [
+                        feature.bottomLeft,
+                        feature.bottomRight,
+                        feature.topRight,
+                        feature.topLeft
+                    ]
+                    let result = ScanResult(string: qrCodeLink, type: .qr, image: qrcodeImg, corners: corners)
+                    found(result)
+                }
+
+            }
+
+        } else {
+            print("Something went wrong")
+        }
+
+        dismiss(animated: true, completion: nil)
+    }
+
+    public func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        isGalleryShowing = false
+        dismiss(animated: true, completion: nil)
     }
 }
 
