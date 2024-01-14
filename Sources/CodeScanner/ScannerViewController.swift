@@ -15,7 +15,7 @@ extension CodeScannerView {
     public class ScannerViewController: UIViewController, UINavigationControllerDelegate {
         private let photoOutput = AVCapturePhotoOutput()
         private var isCapturing = false
-        private var handler: ((UIImage) -> Void)?
+        private var handler: ((UIImage?) -> Void)?
         var parentView: CodeScannerView!
         var codesFound = Set<String>()
         var didFinishScanning = false
@@ -438,12 +438,7 @@ extension CodeScannerView.ScannerViewController: AVCaptureMetadataOutputObjectsD
         if let metadataObject = metadataObjects.first {
             guard let readableObject = metadataObject as? AVMetadataMachineReadableCodeObject else { return }
             guard let stringValue = readableObject.stringValue else { return }
-
-            guard didFinishScanning == false else { return }
-
-            let photoSettings = AVCapturePhotoSettings()
-            guard !isCapturing else { return }
-            isCapturing = true
+            guard didFinishScanning == false && isCapturing == false else { return }
 
             handler = { [self] image in
                 let result = ScanResult(string: stringValue, type: readableObject.type, image: image, corners: readableObject.corners)
@@ -472,7 +467,13 @@ extension CodeScannerView.ScannerViewController: AVCaptureMetadataOutputObjectsD
                     }
                 }
             }
-            photoOutput.capturePhoto(with: photoSettings, delegate: self)
+
+            if parentView.requirePhotoOutput {
+                isCapturing = true
+                photoOutput.capturePhoto(with: AVCapturePhotoSettings(), delegate: self)
+            } else {
+                handler?(nil)
+            }
         }
     }
 }
