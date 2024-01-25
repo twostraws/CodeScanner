@@ -23,6 +23,7 @@ extension CodeScannerView {
         private let showViewfinder: Bool
         
         let fallbackVideoCaptureDevice = AVCaptureDevice.default(for: .video)
+        private var isTorchOn = false
         
         private var isGalleryShowing: Bool = false {
             didSet {
@@ -52,8 +53,22 @@ extension CodeScannerView {
             present(imagePicker, animated: true, completion: nil)
         }
         
+        func toggleTourch() {
+            if let videoCaptureDevice = parentView.videoCaptureDevice, videoCaptureDevice.hasFlash {
+                try? videoCaptureDevice.lockForConfiguration()
+                
+                videoCaptureDevice.torchMode = isTorchOn ? .off : .on
+                videoCaptureDevice.unlockForConfiguration()
+                isTorchOn.toggle()
+            }
+        }
+        
         @objc func openGalleryFromButton(_ sender: UIButton) {
             openGallery()
+        }
+        
+        @objc private func toggleTourchFromButton(_ sender: UIButton) {
+            toggleTourch()
         }
 
         public func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
@@ -176,6 +191,27 @@ extension CodeScannerView {
             button.addTarget(self, action: #selector(openGalleryFromButton), for: .touchUpInside)
             button.translatesAutoresizingMaskIntoConstraints = false
             return button
+        }()
+        
+        private lazy var manualTourchButton: UIButton = {
+            let button = UIButton(type: .system)
+            let imageNormal = UIImage(systemName: "flashlight.off.fill")
+            let background = UIImage(systemName: "capsule.fill")?.withTintColor(.systemBackground, renderingMode: .alwaysOriginal)
+            button.setImage(imageNormal, for: .normal)
+            button.setBackgroundImage(background, for: .normal)
+            button.tintColor = .systemBlue
+            button.addTarget(self, action: #selector(toggleTourchFromButton), for: .touchUpInside)
+            return button
+        }()
+        
+        private lazy var buttonsStackView: UIStackView = {
+            let stackView = UIStackView(arrangedSubviews: [manualTourchButton, manualSelectButton])
+            stackView.axis = .horizontal
+            stackView.alignment = .center
+            stackView.distribution = .fill
+            stackView.spacing = 10
+            stackView.translatesAutoresizingMaskIntoConstraints = false
+            return stackView
         }()
 
         override public func viewDidLoad() {
@@ -401,31 +437,36 @@ extension CodeScannerView {
         }
         
         func showManualSelectButton(_ isManualSelect: Bool) {
-            if manualSelectButton.superview == nil {
-                view.addSubview(manualSelectButton)
-                NSLayoutConstraint.activate([
-                    manualSelectButton.heightAnchor.constraint(equalToConstant: 50),
-                    manualSelectButton.widthAnchor.constraint(equalToConstant: 60),
-                    view.centerXAnchor.constraint(equalTo: manualSelectButton.centerXAnchor),
-                    view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: manualSelectButton.bottomAnchor, constant: 32)
-                ])
-            }
-            
-            view.bringSubviewToFront(manualSelectButton)
+            NSLayoutConstraint.activate([
+                manualSelectButton.heightAnchor.constraint(equalToConstant: 50),
+                manualSelectButton.widthAnchor.constraint(equalToConstant: 60)
+            ])
             manualSelectButton.isHidden = !isManualSelect
         }
+        
+        func showManualTorchButton(_ manualTorch: Bool) {
+            NSLayoutConstraint.activate([
+                manualTourchButton.heightAnchor.constraint(equalToConstant: 50),
+                manualTourchButton.widthAnchor.constraint(equalToConstant: 60)
+            ])
+            manualTourchButton.isHidden = !manualTorch
+        }
+        
+        func showManualButtons(_ isManualButtons: Bool = true) {
+            if buttonsStackView.superview == nil {
+                view.addSubview(buttonsStackView)
+                NSLayoutConstraint.activate([
+                    view.centerXAnchor.constraint(equalTo: buttonsStackView.centerXAnchor),
+                    view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: buttonsStackView.bottomAnchor, constant: 32)
+                ])
+            }
+            view.bringSubviewToFront(buttonsStackView)
+            buttonsStackView.isHidden = !isManualButtons
+        }
+        
         #endif
         
-        func updateViewController(isTorchOn: Bool, isGalleryPresented: Bool, isManualCapture: Bool, isManualSelect: Bool) {
-            guard let videoCaptureDevice = parentView.videoCaptureDevice ?? fallbackVideoCaptureDevice else {
-                return
-            }
-            
-            if videoCaptureDevice.hasTorch {
-                try? videoCaptureDevice.lockForConfiguration()
-                videoCaptureDevice.torchMode = isTorchOn ? .on : .off
-                videoCaptureDevice.unlockForConfiguration()
-            }
+        func updateViewController(isGalleryPresented: Bool, isManualCapture: Bool, isManualSelect: Bool, isManualTorch: Bool) {
             
             if isGalleryPresented && !isGalleryShowing {
                 openGallery()
@@ -434,6 +475,8 @@ extension CodeScannerView {
             #if !targetEnvironment(simulator)
             showManualCaptureButton(isManualCapture)
             showManualSelectButton(isManualSelect)
+            showManualTorchButton(isManualTorch)
+            showManualButtons()
             #endif
         }
         
