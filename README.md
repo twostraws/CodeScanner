@@ -90,7 +90,8 @@ struct QRCodeScannerExampleView: View {
 
 ## Scanning small QR codes
 
-Scanning small QR code on devices with dual or tripple cameras has to be adjusted because of minimum focus distance built in these cameras. For more information watch [What’s new in camera capture](https://developer.apple.com/videos/play/wwdc2021/10047/?time=133) session from WWDC 2021.
+Scanning small QR code on devices with dual or tripple cameras has to be adjusted because of minimum focus distance built in these cameras.
+To have the best possible focus on the code we scan it is needed to choose the most suitable camera and apply recommended zoom factor. 
 
 If you need to scan small QR codes use `AVCaptureDevice.zoomedCameraForQRCode(withMinimumCodeSize:)` method in `CodeScannerView` initializer for `videoCaptureDevice`.
 
