@@ -25,6 +25,7 @@ extension AVCaptureDevice {
         return captureDevice
     }
     
+    /// Sets recommended zoom factor for a given minimum code size.
     @available(iOS 15.0, *)
     func setRecommendedZoomFactor(forMinimumCodeSize minimumCodeSize: Float) {
         /*
