@@ -26,6 +26,26 @@ If things go wrong, your result will contain a `ScanError` set to one of these t
 **Important:** iOS *requires* you to add the "Privacy - Camera Usage Description" key to your Info.plist file, providing a reason for why you want to access the camera.
 
 
+### Scanning small QR codes
+
+It may be hard to scan small QR code on devices with dual or tripple cameras because of minimum focus distance. For more information watch [What’s new in camera capture](https://developer.apple.com/videos/play/wwdc2021/10047/?time=133) session from WWDC 2021.
+
+If you target to scan small QR codes use `AVCaptureDevice.zoomedCameraForQRCode(withMinimumCodeSize:)` method in `CodeScannerView` initializer.
+
+Example for scanning 20x20mm QR codes.
+
+```swift
+CodeScannerView(codeTypes: [.qr], simulatedData: "Paul Hudson", videoCaptureDevice: AVCaptureDevice.zoomedCameraForQRCode(withMinimumCodeSize: 20)) { response in                    
+    switch response {
+    case .success(let result):
+        print("Found code: \(result.string)")
+    case .failure(let error):
+        print(error.localizedDescription)
+    }
+}
+```
+
+
 ## Customization options
 
 You can provide a variety of extra customization options to `CodeScannerView` in its initializer:
