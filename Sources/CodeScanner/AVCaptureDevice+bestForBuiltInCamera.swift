@@ -26,7 +26,7 @@ extension AVCaptureDevice {
     }
     
     @available(iOS 15.0, *)
-    private func setRecommendedZoomFactor(forMinimumCodeSize minimumCodeSize: Float) {
+    func setRecommendedZoomFactor(forMinimumCodeSize minimumCodeSize: Float) {
         /*
          Optimize the user experience for scanning QR codes down to given size.
          When scanning a QR code of that size, the user may need to get closer than
