@@ -96,11 +96,7 @@ To have the best possible focus on the code we scan it is needed to choose the m
 Example for scanning 20x20mm QR codes.
 
 ```swift
-CodeScannerView(
-    codeTypes: [.qr],
-    simulatedData: "Paul Hudson",
-    videoCaptureDevice: AVCaptureDevice.zoomedCameraForQRCode(withMinimumCodeSize: 20)
-) { response in                    
+CodeScannerView(codeTypes: [.qr], videoCaptureDevice: AVCaptureDevice.zoomedCameraForQRCode(withMinimumCodeSize: 20)) { response in                    
     switch response {
     case .success(let result):
         print("Found code: \(result.string)")
