@@ -26,26 +26,6 @@ If things go wrong, your result will contain a `ScanError` set to one of these t
 **Important:** iOS *requires* you to add the "Privacy - Camera Usage Description" key to your Info.plist file, providing a reason for why you want to access the camera.
 
 
-### Scanning small QR codes
-
-It may be hard to scan small QR code on devices with dual or tripple cameras because of minimum focus distance. For more information watch [What’s new in camera capture](https://developer.apple.com/videos/play/wwdc2021/10047/?time=133) session from WWDC 2021.
-
-If you target to scan small QR codes use `AVCaptureDevice.zoomedCameraForQRCode(withMinimumCodeSize:)` method in `CodeScannerView` initializer.
-
-Example for scanning 20x20mm QR codes.
-
-```swift
-CodeScannerView(codeTypes: [.qr], simulatedData: "Paul Hudson", videoCaptureDevice: AVCaptureDevice.zoomedCameraForQRCode(withMinimumCodeSize: 20)) { response in                    
-    switch response {
-    case .success(let result):
-        print("Found code: \(result.string)")
-    case .failure(let error):
-        print(error.localizedDescription)
-    }
-}
-```
-
-
 ## Customization options
 
 You can provide a variety of extra customization options to `CodeScannerView` in its initializer:
@@ -55,6 +35,7 @@ You can provide a variety of extra customization options to `CodeScannerView` in
 - `showViewfinder` determines whether to show a box-like viewfinder over the UI. Default: false.
 - `simulatedData` allows you to provide some test data to use in Simulator, when real scanning isn’t available. Default: an empty string.
 - `shouldVibrateOnSuccess` allows you to determine whether device should vibrate when a code is found. Default: true.
+- `videoCaptureDevice` allows you to choose different capture device that is most suitable for code to scan. 
 
 If you want to add UI customization, such as a dedicated Cancel button, you should wrap your `CodeScannerView` instance in a `NavigationView` and use a `toolbar()` modifier to add whatever buttons you want.
 
@@ -103,6 +84,29 @@ struct QRCodeScannerExampleView: View {
                 }
             }
         }
+    }
+}
+```
+
+## Scanning small QR codes
+
+Scanning small QR code on devices with dual or tripple cameras has to be adjusted because of minimum focus distance built in these cameras. For more information watch [What’s new in camera capture](https://developer.apple.com/videos/play/wwdc2021/10047/?time=133) session from WWDC 2021.
+
+If you need to scan small QR codes use `AVCaptureDevice.zoomedCameraForQRCode(withMinimumCodeSize:)` method in `CodeScannerView` initializer for `videoCaptureDevice`.
+
+Example for scanning 20x20mm QR codes.
+
+```swift
+CodeScannerView(
+    codeTypes: [.qr],
+    simulatedData: "Paul Hudson",
+    videoCaptureDevice: AVCaptureDevice.zoomedCameraForQRCode(withMinimumCodeSize: 20)
+) { response in                    
+    switch response {
+    case .success(let result):
+        print("Found code: \(result.string)")
+    case .failure(let error):
+        print(error.localizedDescription)
     }
 }
 ```
