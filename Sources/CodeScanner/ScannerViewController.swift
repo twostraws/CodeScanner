@@ -438,7 +438,7 @@ extension CodeScannerView.ScannerViewController: AVCaptureMetadataOutputObjectsD
         if let metadataObject = metadataObjects.first {
             guard let readableObject = metadataObject as? AVMetadataMachineReadableCodeObject else { return }
             guard let stringValue = readableObject.stringValue else { return }
-            guard didFinishScanning == false && isCapturing == false else { return }
+            guard !didFinishScanning && !isCapturing else { return }
 
             handler = { [self] image in
                 let result = ScanResult(string: stringValue, type: readableObject.type, image: image, corners: readableObject.corners)
