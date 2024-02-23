@@ -432,6 +432,7 @@ extension CodeScannerView {
 
 // MARK: - AVCaptureMetadataOutputObjectsDelegate
 
+@available(macCatalyst 14.0, *)
 extension CodeScannerView.ScannerViewController: AVCaptureMetadataOutputObjectsDelegate {
     public func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
         if let metadataObject = metadataObjects.first {
@@ -478,6 +479,7 @@ extension CodeScannerView.ScannerViewController: AVCaptureMetadataOutputObjectsD
 
 // MARK: - UIImagePickerControllerDelegate
 
+@available(macCatalyst 14.0, *)
 extension CodeScannerView.ScannerViewController: UIImagePickerControllerDelegate {
     public func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
         isGalleryShowing = false
@@ -521,6 +523,7 @@ extension CodeScannerView.ScannerViewController: UIImagePickerControllerDelegate
 
 // MARK: - UIAdaptivePresentationControllerDelegate
 
+@available(macCatalyst 14.0, *)
 extension CodeScannerView.ScannerViewController: UIAdaptivePresentationControllerDelegate {
     public func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
         // Gallery is no longer being presented
