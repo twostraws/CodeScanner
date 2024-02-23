@@ -12,7 +12,7 @@ import UIKit
 @available(macCatalyst 14.0, *)
 extension CodeScannerView {
     
-    public class ScannerViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate, AVCaptureMetadataOutputObjectsDelegate, UIAdaptivePresentationControllerDelegate {
+    public class ScannerViewController: UIViewController, UINavigationControllerDelegate {
         private let photoOutput = AVCapturePhotoOutput()
         private var isCapturing = false
         private var handler: ((UIImage) -> Void)?
@@ -54,50 +54,6 @@ extension CodeScannerView {
         
         @objc func openGalleryFromButton(_ sender: UIButton) {
             openGallery()
-        }
-
-        public func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
-            isGalleryShowing = false
-            
-            if let qrcodeImg = info[.originalImage] as? UIImage {
-                let detector = CIDetector(ofType: CIDetectorTypeQRCode, context: nil, options: [CIDetectorAccuracy: CIDetectorAccuracyHigh])!
-                let ciImage = CIImage(image:qrcodeImg)!
-                var qrCodeLink = ""
-
-                let features = detector.features(in: ciImage)
-
-                for feature in features as! [CIQRCodeFeature] {
-                    qrCodeLink = feature.messageString!
-                    if qrCodeLink == "" {
-                        didFail(reason: .badOutput)
-                    } else {
-                        let corners = [
-                            feature.bottomLeft,
-                            feature.bottomRight,
-                            feature.topRight,
-                            feature.topLeft
-                        ]
-                        let result = ScanResult(string: qrCodeLink, type: .qr, image: qrcodeImg, corners: corners)
-                        found(result)
-                    }
-
-                }
-
-            } else {
-                print("Something went wrong")
-            }
-
-            dismiss(animated: true, completion: nil)
-        }
-        
-        public func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            isGalleryShowing = false
-            dismiss(animated: true, completion: nil)
-        }
-
-        public func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
-            // Gallery is no longer being presented
-            isGalleryShowing = false
         }
 
         #if targetEnvironment(simulator)
@@ -449,48 +405,6 @@ extension CodeScannerView {
             lastTime = Date()
         }
 
-        public func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
-            if let metadataObject = metadataObjects.first {
-                guard let readableObject = metadataObject as? AVMetadataMachineReadableCodeObject else { return }
-                guard let stringValue = readableObject.stringValue else { return }
-                
-                guard didFinishScanning == false else { return }
-                
-                let photoSettings = AVCapturePhotoSettings()
-                guard !isCapturing else { return }
-                isCapturing = true
-                
-                handler = { [self] image in
-                    let result = ScanResult(string: stringValue, type: readableObject.type, image: image, corners: readableObject.corners)
-                    
-                    switch parentView.scanMode {
-                    case .once:
-                        found(result)
-                        // make sure we only trigger scan once per use
-                        didFinishScanning = true
-                        
-                    case .manual:
-                        if !didFinishScanning, isWithinManualCaptureInterval() {
-                            found(result)
-                            didFinishScanning = true
-                        }
-                        
-                    case .oncePerCode:
-                        if !codesFound.contains(stringValue) {
-                            codesFound.insert(stringValue)
-                            found(result)
-                        }
-                        
-                    case .continuous:
-                        if isPastScanInterval() {
-                            found(result)
-                        }
-                    }
-                }
-                photoOutput.capturePhoto(with: photoSettings, delegate: self)
-            }
-        }
-
         func isPastScanInterval() -> Bool {
             Date().timeIntervalSince(lastTime) >= parentView.scanInterval
         }
@@ -515,6 +429,109 @@ extension CodeScannerView {
         
     }
 }
+
+// MARK: - AVCaptureMetadataOutputObjectsDelegate
+
+@available(macCatalyst 14.0, *)
+extension CodeScannerView.ScannerViewController: AVCaptureMetadataOutputObjectsDelegate {
+    public func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
+        if let metadataObject = metadataObjects.first {
+            guard let readableObject = metadataObject as? AVMetadataMachineReadableCodeObject else { return }
+            guard let stringValue = readableObject.stringValue else { return }
+
+            guard didFinishScanning == false else { return }
+
+            let photoSettings = AVCapturePhotoSettings()
+            guard !isCapturing else { return }
+            isCapturing = true
+
+            handler = { [self] image in
+                let result = ScanResult(string: stringValue, type: readableObject.type, image: image, corners: readableObject.corners)
+
+                switch parentView.scanMode {
+                case .once:
+                    found(result)
+                    // make sure we only trigger scan once per use
+                    didFinishScanning = true
+
+                case .manual:
+                    if !didFinishScanning, isWithinManualCaptureInterval() {
+                        found(result)
+                        didFinishScanning = true
+                    }
+
+                case .oncePerCode:
+                    if !codesFound.contains(stringValue) {
+                        codesFound.insert(stringValue)
+                        found(result)
+                    }
+
+                case .continuous:
+                    if isPastScanInterval() {
+                        found(result)
+                    }
+                }
+            }
+            photoOutput.capturePhoto(with: photoSettings, delegate: self)
+        }
+    }
+}
+
+// MARK: - UIImagePickerControllerDelegate
+
+@available(macCatalyst 14.0, *)
+extension CodeScannerView.ScannerViewController: UIImagePickerControllerDelegate {
+    public func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
+        isGalleryShowing = false
+
+        if let qrcodeImg = info[.originalImage] as? UIImage {
+            let detector = CIDetector(ofType: CIDetectorTypeQRCode, context: nil, options: [CIDetectorAccuracy: CIDetectorAccuracyHigh])!
+            let ciImage = CIImage(image:qrcodeImg)!
+            var qrCodeLink = ""
+
+            let features = detector.features(in: ciImage)
+
+            for feature in features as! [CIQRCodeFeature] {
+                qrCodeLink = feature.messageString!
+                if qrCodeLink == "" {
+                    didFail(reason: .badOutput)
+                } else {
+                    let corners = [
+                        feature.bottomLeft,
+                        feature.bottomRight,
+                        feature.topRight,
+                        feature.topLeft
+                    ]
+                    let result = ScanResult(string: qrCodeLink, type: .qr, image: qrcodeImg, corners: corners)
+                    found(result)
+                }
+
+            }
+
+        } else {
+            print("Something went wrong")
+        }
+
+        dismiss(animated: true, completion: nil)
+    }
+
+    public func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        isGalleryShowing = false
+        dismiss(animated: true, completion: nil)
+    }
+}
+
+// MARK: - UIAdaptivePresentationControllerDelegate
+
+@available(macCatalyst 14.0, *)
+extension CodeScannerView.ScannerViewController: UIAdaptivePresentationControllerDelegate {
+    public func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+        // Gallery is no longer being presented
+        isGalleryShowing = false
+    }
+}
+
+// MARK: - AVCapturePhotoCaptureDelegate
 
 @available(macCatalyst 14.0, *)
 extension CodeScannerView.ScannerViewController: AVCapturePhotoCaptureDelegate {
@@ -551,6 +568,8 @@ extension CodeScannerView.ScannerViewController: AVCapturePhotoCaptureDelegate {
     }
     
 }
+
+// MARK: - AVCaptureDevice
 
 @available(macCatalyst 14.0, *)
 public extension AVCaptureDevice {
