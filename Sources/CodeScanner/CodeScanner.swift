@@ -53,8 +53,20 @@ public enum ScanMode {
     /// Keep scanning all codes until dismissed.
     case continuous
 
+    /// Keep scanning all codes - except the ones from the ignored list - until dismissed.
+    case continuousExcept(ignoredList: Set<String>)
+
     /// Scan only when capture button is tapped.
     case manual
+
+    var isManual: Bool {
+        switch self {
+        case .manual:
+            return true
+        case .once, .oncePerCode, .continuous, .continuousExcept:
+            return false
+        }
+    }
 }
 
 /// A SwiftUI view that is able to scan barcodes, QR codes, and more, and send back what was found.
@@ -114,7 +126,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         uiViewController.updateViewController(
             isTorchOn: isTorchOn,
             isGalleryPresented: isGalleryPresented.wrappedValue,
-            isManualCapture: scanMode == .manual,
+            isManualCapture: scanMode.isManual,
             isManualSelect: manualSelect
         )
     }

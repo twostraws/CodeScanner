@@ -400,7 +400,7 @@ extension CodeScannerView {
         }
         
         public func readyManualCapture() {
-            guard parentView.scanMode == .manual else { return }
+            guard parentView.scanMode.isManual else { return }
             self.reset()
             lastTime = Date()
         }
@@ -463,6 +463,11 @@ extension CodeScannerView.ScannerViewController: AVCaptureMetadataOutputObjectsD
 
                 case .continuous:
                     if isPastScanInterval() {
+                        found(result)
+                    }
+
+                case .continuousExcept(let ignoredList):
+                    if isPastScanInterval() && !ignoredList.contains(stringValue) {
                         found(result)
                     }
                 }
