@@ -476,7 +476,7 @@ extension CodeScannerView.ScannerViewController: AVCaptureMetadataOutputObjectsD
                 }
             }
 
-            if parentView.requirePhotoOutput {
+            if parentView.requiresPhotoOutput {
                 isCapturing = true
                 photoOutput.capturePhoto(with: AVCapturePhotoSettings(), delegate: self)
             } else {
