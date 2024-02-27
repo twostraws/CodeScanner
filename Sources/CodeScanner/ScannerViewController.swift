@@ -185,11 +185,11 @@ extension CodeScannerView {
             previewLayer.frame = view.layer.bounds
             previewLayer.videoGravity = .resizeAspectFill
             view.layer.addSublayer(previewLayer)
-            addviewfinder()
+            addViewFinder()
 
             reset()
 
-            if (captureSession.isRunning == false) {
+            if !captureSession.isRunning {
                 DispatchQueue.global(qos: .userInteractive).async {
                     self.captureSession?.startRunning()
                 }
@@ -232,7 +232,7 @@ extension CodeScannerView {
             NotificationCenter.default.addObserver(
                 self,
                 selector: #selector(updateOrientation),
-                name: Notification.Name("UIDeviceOrientationDidChangeNotification"),
+                name: UIDevice.orientationDidChangeNotification,
                 object: nil
             )
         }
@@ -257,7 +257,7 @@ extension CodeScannerView {
                 return
             }
 
-            if (captureSession!.canAddInput(videoInput)) {
+            if captureSession!.canAddInput(videoInput) {
                 captureSession!.addInput(videoInput)
             } else {
                 didFail(reason: .badInput)
@@ -265,9 +265,9 @@ extension CodeScannerView {
             }
             let metadataOutput = AVCaptureMetadataOutput()
 
-            if (captureSession!.canAddOutput(metadataOutput)) {
+            if captureSession!.canAddOutput(metadataOutput) {
                 captureSession!.addOutput(metadataOutput)
-                captureSession?.addOutput(photoOutput)
+                captureSession!.addOutput(photoOutput)
                 metadataOutput.setMetadataObjectsDelegate(self, queue: DispatchQueue.main)
                 metadataOutput.metadataObjectTypes = parentView.codeTypes
             } else {
@@ -276,7 +276,7 @@ extension CodeScannerView {
             }
         }
 
-        private func addviewfinder() {
+        private func addViewFinder() {
             guard showViewfinder, let imageView = viewFinder else { return }
 
             view.addSubview(imageView)
@@ -292,7 +292,7 @@ extension CodeScannerView {
         override public func viewDidDisappear(_ animated: Bool) {
             super.viewDidDisappear(animated)
 
-            if (captureSession?.isRunning == true) {
+            if captureSession?.isRunning == true {
                 DispatchQueue.global(qos: .userInteractive).async {
                     self.captureSession?.stopRunning()
                 }
@@ -329,7 +329,7 @@ extension CodeScannerView {
                 return
             }
 
-            // Focus to the correct point, make continiuous focus and exposure so the point stays sharp when moving the device closer
+            // Focus to the correct point, make continuous focus and exposure so the point stays sharp when moving the device closer
             device.focusPointOfInterest = focusPoint
             device.focusMode = .continuousAutoFocus
             device.exposurePointOfInterest = focusPoint
@@ -383,7 +383,7 @@ extension CodeScannerView {
                 videoCaptureDevice.unlockForConfiguration()
             }
             
-            if isGalleryPresented && !isGalleryShowing {
+            if isGalleryPresented, !isGalleryShowing {
                 openGallery()
             }
             
@@ -405,11 +405,11 @@ extension CodeScannerView {
             lastTime = Date()
         }
 
-        func isPastScanInterval() -> Bool {
+        var isPastScanInterval: Bool {
             Date().timeIntervalSince(lastTime) >= parentView.scanInterval
         }
         
-        func isWithinManualCaptureInterval() -> Bool {
+        var isWithinManualCaptureInterval: Bool {
             Date().timeIntervalSince(lastTime) <= 0.5
         }
 
@@ -435,53 +435,56 @@ extension CodeScannerView {
 @available(macCatalyst 14.0, *)
 extension CodeScannerView.ScannerViewController: AVCaptureMetadataOutputObjectsDelegate {
     public func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
-        if let metadataObject = metadataObjects.first {
-            guard !parentView.isPaused && !didFinishScanning && !isCapturing,
-                  let readableObject = metadataObject as? AVMetadataMachineReadableCodeObject,
-                  let stringValue = readableObject.stringValue
-            else {
-                return
-            }
 
-            handler = { [self] image in
-                let result = ScanResult(string: stringValue, type: readableObject.type, image: image, corners: readableObject.corners)
 
-                switch parentView.scanMode {
-                case .once:
+        guard let metadataObject = metadataObjects.first,
+              !parentView.isPaused,
+              !didFinishScanning,
+              !isCapturing,
+              let readableObject = metadataObject as? AVMetadataMachineReadableCodeObject,
+              let stringValue = readableObject.stringValue else {
+
+            return
+        }
+
+        handler = { [self] image in
+            let result = ScanResult(string: stringValue, type: readableObject.type, image: image, corners: readableObject.corners)
+
+            switch parentView.scanMode {
+            case .once:
+                found(result)
+                // make sure we only trigger scan once per use
+                didFinishScanning = true
+
+            case .manual:
+                if !didFinishScanning, isWithinManualCaptureInterval {
                     found(result)
-                    // make sure we only trigger scan once per use
                     didFinishScanning = true
+                }
 
-                case .manual:
-                    if !didFinishScanning, isWithinManualCaptureInterval() {
-                        found(result)
-                        didFinishScanning = true
-                    }
+            case .oncePerCode:
+                if !codesFound.contains(stringValue) {
+                    codesFound.insert(stringValue)
+                    found(result)
+                }
 
-                case .oncePerCode:
-                    if !codesFound.contains(stringValue) {
-                        codesFound.insert(stringValue)
-                        found(result)
-                    }
+            case .continuous:
+                if isPastScanInterval {
+                    found(result)
+                }
 
-                case .continuous:
-                    if isPastScanInterval() {
-                        found(result)
-                    }
-
-                case .continuousExcept(let ignoredList):
-                    if isPastScanInterval() && !ignoredList.contains(stringValue) {
-                        found(result)
-                    }
+            case .continuousExcept(let ignoredList):
+                if isPastScanInterval, !ignoredList.contains(stringValue) {
+                    found(result)
                 }
             }
+        }
 
-            if parentView.requiresPhotoOutput {
-                isCapturing = true
-                photoOutput.capturePhoto(with: AVCapturePhotoSettings(), delegate: self)
-            } else {
-                handler?(nil)
-            }
+        if parentView.requiresPhotoOutput {
+            isCapturing = true
+            photoOutput.capturePhoto(with: AVCapturePhotoSettings(), delegate: self)
+        } else {
+            handler?(nil)
         }
     }
 }
@@ -493,40 +496,42 @@ extension CodeScannerView.ScannerViewController: UIImagePickerControllerDelegate
     public func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
         isGalleryShowing = false
 
-        if let qrcodeImg = info[.originalImage] as? UIImage {
-            let detector = CIDetector(ofType: CIDetectorTypeQRCode, context: nil, options: [CIDetectorAccuracy: CIDetectorAccuracyHigh])!
-            let ciImage = CIImage(image:qrcodeImg)!
-            var qrCodeLink = ""
-
-            let features = detector.features(in: ciImage)
-
-            for feature in features as! [CIQRCodeFeature] {
-                qrCodeLink = feature.messageString!
-                if qrCodeLink == "" {
-                    didFail(reason: .badOutput)
-                } else {
-                    let corners = [
-                        feature.bottomLeft,
-                        feature.bottomRight,
-                        feature.topRight,
-                        feature.topLeft
-                    ]
-                    let result = ScanResult(string: qrCodeLink, type: .qr, image: qrcodeImg, corners: corners)
-                    found(result)
-                }
-
-            }
-
-        } else {
-            print("Something went wrong")
+        defer {
+            dismiss(animated: true)
         }
 
-        dismiss(animated: true, completion: nil)
+        guard let qrcodeImg = info[.originalImage] as? UIImage,
+              let detector = CIDetector(ofType: CIDetectorTypeQRCode, context: nil, options: [CIDetectorAccuracy: CIDetectorAccuracyHigh]),
+              let ciImage = CIImage(image:qrcodeImg) else {
+
+            print("Something went wrong")
+            return
+        }
+
+        var qrCodeLink = ""
+
+        let features = detector.features(in: ciImage)
+
+        for feature in features as! [CIQRCodeFeature] {
+            qrCodeLink = feature.messageString!
+            if qrCodeLink.isEmpty {
+                didFail(reason: .badOutput)
+            } else {
+                let corners = [
+                    feature.bottomLeft,
+                    feature.bottomRight,
+                    feature.topRight,
+                    feature.topLeft
+                ]
+                let result = ScanResult(string: qrCodeLink, type: .qr, image: qrcodeImg, corners: corners)
+                found(result)
+            }
+        }
     }
 
     public func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
         isGalleryShowing = false
-        dismiss(animated: true, completion: nil)
+        dismiss(animated: true)
     }
 }
 

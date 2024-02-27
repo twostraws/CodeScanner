@@ -136,6 +136,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
     
 }
 
+@available(macCatalyst 14.0, *)
 extension CodeScannerView {
 
     @available(*, deprecated, renamed: "requiresPhotoOutput")
