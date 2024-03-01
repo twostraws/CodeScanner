@@ -504,7 +504,6 @@ extension CodeScannerView.ScannerViewController: UIImagePickerControllerDelegate
               let detector = CIDetector(ofType: CIDetectorTypeQRCode, context: nil, options: [CIDetectorAccuracy: CIDetectorAccuracyHigh]),
               let ciImage = CIImage(image:qrcodeImg) else {
 
-            print("Something went wrong")
             return
         }
 
