@@ -7,7 +7,7 @@
 //
 
 import AVFoundation
-
+#if os(iOS)
 @available(macCatalyst 14.0, *)
 extension AVCaptureDevice {
     
@@ -123,3 +123,4 @@ private extension Float {
 
  Copyright (C) 2016 Apple Inc. All Rights Reserved.
  */
+#endif

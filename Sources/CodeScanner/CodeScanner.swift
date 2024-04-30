@@ -9,6 +9,7 @@
 import AVFoundation
 import SwiftUI
 
+#if os(iOS)
 /// An enum describing the ways CodeScannerView can hit scanning problems.
 public enum ScanError: Error {
     /// The camera could not be accessed.
@@ -153,3 +154,4 @@ struct CodeScannerView_Previews: PreviewProvider {
         }
     }
 }
+#endif

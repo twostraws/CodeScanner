@@ -7,8 +7,11 @@
 //
 
 import AVFoundation
+#if canImport(UIKit)
 import UIKit
+#endif
 
+#if os(iOS)
 @available(macCatalyst 14.0, *)
 extension CodeScannerView {
     
@@ -594,3 +597,4 @@ public extension AVCaptureDevice {
     }
     
 }
+#endif
