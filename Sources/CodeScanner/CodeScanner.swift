@@ -6,6 +6,7 @@
 //  Copyright © 2021 Paul Hudson. All rights reserved.
 //
 
+#if os(iOS)
 import AVFoundation
 import SwiftUI
 
@@ -153,3 +154,4 @@ struct CodeScannerView_Previews: PreviewProvider {
         }
     }
 }
+#endif

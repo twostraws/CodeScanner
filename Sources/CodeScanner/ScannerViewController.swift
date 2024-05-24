@@ -6,6 +6,7 @@
 //  Copyright © 2021 Paul Hudson. All rights reserved.
 //
 
+#if os(iOS)
 import AVFoundation
 import UIKit
 
@@ -594,3 +595,4 @@ public extension AVCaptureDevice {
     }
     
 }
+#endif
