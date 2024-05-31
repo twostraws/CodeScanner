@@ -6,6 +6,7 @@
 //  Copyright © 2024 Paul Hudson. All rights reserved.
 //
 
+#if os(iOS)
 import AVFoundation
 
 @available(macCatalyst 14.0, *)
@@ -79,6 +80,7 @@ private extension Float {
         self * Float.pi / 180
     }
 }
+#endif
 
 /*
  Part of this code is copied from Apple sample project "AVCamBarcode: Using AVFoundation to capture barcodes".
