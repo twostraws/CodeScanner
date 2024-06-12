@@ -292,8 +292,8 @@ extension CodeScannerView {
         }
         
         private func addManualButtons() {
-            self.view.bringSubviewToFront(self.manualCaptureButton)
-            self.view.bringSubviewToFront(self.manualSelectButton)
+            self.view.bringSubviewToFront(manualCaptureButton)
+            self.view.bringSubviewToFront(manualSelectButton)
         }
 
         override public func viewDidDisappear(_ animated: Bool) {
