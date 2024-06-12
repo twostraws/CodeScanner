@@ -138,7 +138,6 @@ extension CodeScannerView {
         override public func viewDidLoad() {
             super.viewDidLoad()
             self.addOrientationDidChangeObserver()
-            self.addSessionDidChangeObserver()
             self.setBackgroundColor()
             self.handleCameraPermission()
         }
@@ -161,13 +160,6 @@ extension CodeScannerView {
                 connection.videoOrientation = .portraitUpsideDown
             default:
                 connection.videoOrientation = .portrait
-            }
-        }
-        
-        @objc private func onCaptureSessionStarted() {
-            DispatchQueue.main.async {
-                self.view.bringSubviewToFront(self.manualCaptureButton)
-                self.view.bringSubviewToFront(self.manualSelectButton)
             }
         }
 
@@ -242,15 +234,6 @@ extension CodeScannerView {
                 self,
                 selector: #selector(updateOrientation),
                 name: UIDevice.orientationDidChangeNotification,
-                object: nil
-            )
-        }
-        
-        private func addSessionDidChangeObserver() {
-            NotificationCenter.default.addObserver(
-                self,
-                selector: #selector(onCaptureSessionStarted),
-                name: NSNotification.Name.AVCaptureSessionDidStartRunning,
                 object: nil
             )
         }
@@ -370,6 +353,7 @@ extension CodeScannerView {
                 ])
             }
             
+            view.bringSubviewToFront(manualCaptureButton)
             manualCaptureButton.isHidden = !isManualCapture
         }
         
@@ -384,6 +368,7 @@ extension CodeScannerView {
                 ])
             }
             
+            view.bringSubviewToFront(manualSelectButton)
             manualSelectButton.isHidden = !isManualSelect
         }
         #endif
