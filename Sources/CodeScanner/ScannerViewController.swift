@@ -512,17 +512,22 @@ extension CodeScannerView.ScannerViewController: UIImagePickerControllerDelegate
 
         let features = detector.features(in: ciImage)
 
-        for feature in features as! [CIQRCodeFeature] {
-            qrCodeLink = feature.messageString!
-            if qrCodeLink.isEmpty {
-                didFail(reason: .badOutput)
-            } else {
+        if features.isEmpty {
+            didFail(reason: .badOutput)
+        } else {
+            for feature in features.compactMap({ $0 as? CIQRCodeFeature }) {
+                guard let qrCodeLink = feature.messageString, !qrCodeLink.isEmpty else {
+                    didFail(reason: .badOutput)
+                    continue
+                }
+
                 let corners = [
                     feature.bottomLeft,
                     feature.bottomRight,
                     feature.topRight,
                     feature.topLeft
                 ]
+
                 let result = ScanResult(string: qrCodeLink, type: .qr, image: qrcodeImg, corners: corners)
                 found(result)
             }
