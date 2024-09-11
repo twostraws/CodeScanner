@@ -448,7 +448,8 @@ extension CodeScannerView.ScannerViewController: AVCaptureMetadataOutputObjectsD
             return
         }
 
-        handler = { [self] image in
+        handler = { [weak self] image in
+            guard let self else { return }
             let result = ScanResult(string: stringValue, type: readableObject.type, image: image, corners: readableObject.corners)
 
             switch parentView.scanMode {
