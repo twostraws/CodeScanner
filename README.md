@@ -109,7 +109,7 @@ CodeScannerView(codeTypes: [.qr], videoCaptureDevice: AVCaptureDevice.zoomedCame
 
 ## Credits
 
-CodeScanner was made by [Paul Hudson](https://twitter.com/twostraws), who writes [free Swift tutorials over at Hacking with Swift](https://www.hackingwithswift.com). It’s available under the MIT license, which permits commercial use, modification, distribution, and private use.
+CodeScanner was made by [Paul Hudson](https://twitter.com/twostraws), who writes [free Swift tutorials over at Hacking with Swift](https://www.hackingwithswift.com), and is now maintained by [Nathan Fallet](https://nathanfallet.me). It’s available under the MIT license, which permits commercial use, modification, distribution, and private use.
 
 
 ## License
