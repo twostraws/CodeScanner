@@ -18,7 +18,7 @@ jobs:
     - name: Show eligible build destinations
       run: xcodebuild -showdestinations -scheme CodeScanner
     - name: Build ( iOS)
-      run: xcodebuild build -scheme CodeScanner -destination 'platform=iOS Simulator,OS=latest,name=iPhone 13 Pro'
+      run: xcodebuild build -scheme CodeScanner -destination 'platform=iOS Simulator,OS=latest,name=iPhone 16 Pro'
     - name: Build ( visionOS)
       run: xcodebuild build -scheme CodeScanner -destination 'platform=visionOS Simulator,OS=latest,name=Apple Vision Pro'
     - name: Build ( mac Catalyst)
