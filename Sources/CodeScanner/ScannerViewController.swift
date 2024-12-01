@@ -425,7 +425,9 @@ extension CodeScannerView {
         }
 
         func didFail(reason: ScanError) {
-            parentView.completion(.failure(reason))
+            DispatchQueue.main.async {
+                self.parentView.completion(.failure(reason))
+            }
         }
         
     }
