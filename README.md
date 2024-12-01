@@ -31,7 +31,7 @@ If things go wrong, your result will contain a `ScanError` set to one of these t
 You can provide a variety of extra customization options to `CodeScannerView` in its initializer:
 
 - `scanMode` can be `.once` to scan a single code, `.oncePerCode` to scan many codes but only trigger finding each unique code once, and `.continuous` will keep finding codes until you dismiss the scanner. Default: `.once`.
-- `scanInterval` controls how fast individual codes should be scanned when running in `.continuous` scan mode.
+- `scanInterval` controls how fast individual codes should be scanned (in seconds) when running in `.continuous` scan mode.
 - `showViewfinder` determines whether to show a box-like viewfinder over the UI. Default: false.
 - `simulatedData` allows you to provide some test data to use in Simulator, when real scanning isn’t available. Default: an empty string.
 - `shouldVibrateOnSuccess` allows you to determine whether device should vibrate when a code is found. Default: true.
