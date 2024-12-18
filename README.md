@@ -63,25 +63,28 @@ Here's an example on how to present the QR code-scanning view as a sheet and how
 struct QRCodeScannerExampleView: View {
     @State private var isPresentingScanner = false
     @State private var scannedCode: String?
+    @State private var navigationPath = NavigationPath()
 
     var body: some View {
-        VStack(spacing: 10) {
-            if let code = scannedCode {
-                NavigationLink("Next page", destination: NextView(scannedCode: code), isActive: .constant(true)).hidden()
-            }
-
-            Button("Scan Code") {
-                isPresentingScanner = true
-            }
-
-            Text("Scan a QR code to begin")
-        }
-        .sheet(isPresented: $isPresentingScanner) {
-            CodeScannerView(codeTypes: [.qr]) { response in
-                if case let .success(result) = response {
-                    scannedCode = result.string
-                    isPresentingScanner = false
+        NavigationStack(path: $navigationPath) {
+            VStack(spacing: 10) {
+                Button("Scan Code") {
+                    isPresentingScanner = true
                 }
+
+                Text("Scan a QR code to begin")
+            }
+            .sheet(isPresented: $isPresentingScanner) {
+                CodeScannerView(codeTypes: [.qr]) { response in
+                    if case let .success(result) = response {
+                        scannedCode = result.string
+                        isPresentingScanner = false
+                        navigationPath.append(scannedCode)
+                    }
+                }
+            }
+            .navigationDestination(for: String.self) { code in
+                NextView(scannedCode: code)
             }
         }
     }
