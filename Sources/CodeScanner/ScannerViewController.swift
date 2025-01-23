@@ -22,6 +22,7 @@ extension CodeScannerView {
         var didFinishScanning = false
         var lastTime = Date(timeIntervalSince1970: 0)
         private let showViewfinder: Bool
+        private let viewfinderOptions: ViewfinderOptions
         
         let fallbackVideoCaptureDevice = AVCaptureDevice.default(for: .video)
         
@@ -34,14 +35,20 @@ extension CodeScannerView {
             }
         }
 
-        public init(showViewfinder: Bool = false, parentView: CodeScannerView) {
+        public init(
+            showViewfinder: Bool = false,
+            viewfinderOptions: ViewfinderOptions = .default,
+            parentView: CodeScannerView
+        ) {
             self.parentView = parentView
             self.showViewfinder = showViewfinder
+            self.viewfinderOptions = viewfinderOptions
             super.init(nibName: nil, bundle: nil)
         }
 
         required init?(coder: NSCoder) {
             self.showViewfinder = false
+            self.viewfinderOptions = .default
             super.init(coder: coder)
         }
         
@@ -106,9 +113,8 @@ extension CodeScannerView {
         var previewLayer: AVCaptureVideoPreviewLayer!
 
         private lazy var viewFinder: UIImageView? = {
-            guard let image = UIImage(named: "viewfinder", in: .module, with: nil) else {
-                return nil
-            }
+            guard let image = viewfinderOptions.customImage ?? UIImage(named: "viewfinder", in: .module, with: nil)
+            else { return nil }
 
             let imageView = UIImageView(image: image)
             imageView.translatesAutoresizingMaskIntoConstraints = false
@@ -144,6 +150,7 @@ extension CodeScannerView {
 
         override public func viewWillLayoutSubviews() {
             previewLayer?.frame = view.layer.bounds
+            updateRectOfInterest()
         }
 
         @objc func updateOrientation() {
@@ -187,7 +194,8 @@ extension CodeScannerView {
             previewLayer.videoGravity = .resizeAspectFill
             view.layer.addSublayer(previewLayer)
             addViewFinder()
-
+            updateRectOfInterest()
+            
             reset()
 
             if !captureSession.isRunning {
@@ -276,6 +284,21 @@ extension CodeScannerView {
                 return
             }
         }
+        
+        private func updateRectOfInterest() {
+            guard viewfinderOptions.useAsRectOfInterest && previewLayer != nil, let captureSession else {
+                return
+            }
+            
+            let rectSize = viewfinderOptions.size
+            let rectPointOnLayer = CGPoint(x: previewLayer.frame.midX - (rectSize.width / 2),
+                                           y: previewLayer.frame.midY - (rectSize.height / 2))
+            let rect = previewLayer.metadataOutputRectConverted(fromLayerRect: CGRect(origin: rectPointOnLayer, size: rectSize))
+            
+            captureSession.outputs.compactMap { $0 as? AVCaptureMetadataOutput }.forEach {
+                $0.rectOfInterest = rect
+            }
+        }
 
         private func addViewFinder() {
             guard showViewfinder, let imageView = viewFinder else { return }
@@ -285,8 +308,8 @@ extension CodeScannerView {
             NSLayoutConstraint.activate([
                 imageView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
                 imageView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-                imageView.widthAnchor.constraint(equalToConstant: 200),
-                imageView.heightAnchor.constraint(equalToConstant: 200),
+                imageView.widthAnchor.constraint(equalToConstant: viewfinderOptions.size.width),
+                imageView.heightAnchor.constraint(equalToConstant: viewfinderOptions.size.height),
             ])
         }
 
