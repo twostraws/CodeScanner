@@ -8,7 +8,7 @@
 
 #if os(iOS)
 import AVFoundation
-import UIKit
+import SwiftUI
 
 @available(macCatalyst 14.0, *)
 extension CodeScannerView {
@@ -22,7 +22,7 @@ extension CodeScannerView {
         var didFinishScanning = false
         var lastTime = Date(timeIntervalSince1970: 0)
         private let showViewfinder: Bool
-        private let viewfinderOptions: ViewfinderOptions
+        private let useViewfinderAsRectOfInterest: Bool
         
         let fallbackVideoCaptureDevice = AVCaptureDevice.default(for: .video)
         
@@ -37,18 +37,18 @@ extension CodeScannerView {
 
         public init(
             showViewfinder: Bool = false,
-            viewfinderOptions: ViewfinderOptions = .default,
+            useViewfinderAsRectOfInterest: Bool = false,
             parentView: CodeScannerView
         ) {
             self.parentView = parentView
             self.showViewfinder = showViewfinder
-            self.viewfinderOptions = viewfinderOptions
+            self.useViewfinderAsRectOfInterest = useViewfinderAsRectOfInterest
             super.init(nibName: nil, bundle: nil)
         }
 
         required init?(coder: NSCoder) {
             self.showViewfinder = false
-            self.viewfinderOptions = .default
+            self.useViewfinderAsRectOfInterest = false
             super.init(coder: coder)
         }
         
@@ -111,14 +111,12 @@ extension CodeScannerView {
         
         var captureSession: AVCaptureSession?
         var previewLayer: AVCaptureVideoPreviewLayer!
-
-        private lazy var viewFinder: UIImageView? = {
-            guard let image = viewfinderOptions.customImage ?? UIImage(named: "viewfinder", in: .module, with: nil)
-            else { return nil }
-
-            let imageView = UIImageView(image: image)
-            imageView.translatesAutoresizingMaskIntoConstraints = false
-            return imageView
+        
+        private lazy var viewFinder: UIHostingController<AnyView> = {
+            let vc = UIHostingController(rootView: parentView.currentViewfinderStyle.makeBody())
+            vc.view.translatesAutoresizingMaskIntoConstraints = false
+            vc.view.backgroundColor = .clear
+            return vc
         }()
         
         private lazy var manualCaptureButton: UIButton = {
@@ -286,11 +284,11 @@ extension CodeScannerView {
         }
         
         private func updateRectOfInterest() {
-            guard viewfinderOptions.useAsRectOfInterest && previewLayer != nil, let captureSession else {
+            guard let captureSession, showViewfinder && useViewfinderAsRectOfInterest && previewLayer != nil else {
                 return
             }
             
-            let rectSize = viewfinderOptions.size
+            let rectSize = viewFinder.sizeThatFits(in: view.bounds.size)
             let rectPointOnLayer = CGPoint(x: previewLayer.frame.midX - (rectSize.width / 2),
                                            y: previewLayer.frame.midY - (rectSize.height / 2))
             let rect = previewLayer.metadataOutputRectConverted(fromLayerRect: CGRect(origin: rectPointOnLayer, size: rectSize))
@@ -301,15 +299,22 @@ extension CodeScannerView {
         }
 
         private func addViewFinder() {
-            guard showViewfinder, let imageView = viewFinder else { return }
-
-            view.addSubview(imageView)
-
+            guard showViewfinder else { return }
+            
+            let viewfinderVC = viewFinder
+            
+            viewfinderVC.willMove(toParent: self)
+            addChild(viewfinderVC)
+            view.addSubview(viewfinderVC.view)
+            viewfinderVC.didMove(toParent: self)
+            
+            let desiredSize = viewfinderVC.sizeThatFits(in: view.bounds.size)
+            
             NSLayoutConstraint.activate([
-                imageView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-                imageView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-                imageView.widthAnchor.constraint(equalToConstant: viewfinderOptions.size.width),
-                imageView.heightAnchor.constraint(equalToConstant: viewfinderOptions.size.height),
+                viewfinderVC.view.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+                viewfinderVC.view.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+                viewfinderVC.view.widthAnchor.constraint(equalToConstant: desiredSize.width),
+                viewfinderVC.view.heightAnchor.constraint(equalToConstant: desiredSize.height),
             ])
         }
 
