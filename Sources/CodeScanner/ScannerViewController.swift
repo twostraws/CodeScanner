@@ -288,7 +288,7 @@ extension CodeScannerView {
                 return
             }
             
-            let rectSize = viewFinder.sizeThatFits(in: view.bounds.size)
+            let rectSize = viewFinder.view.frame.size
             let rectPointOnLayer = CGPoint(x: previewLayer.frame.midX - (rectSize.width / 2),
                                            y: previewLayer.frame.midY - (rectSize.height / 2))
             let rect = previewLayer.metadataOutputRectConverted(fromLayerRect: CGRect(origin: rectPointOnLayer, size: rectSize))
