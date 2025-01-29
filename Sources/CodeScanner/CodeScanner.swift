@@ -85,11 +85,16 @@ public struct CodeScannerView: UIViewControllerRepresentable {
     public let requiresPhotoOutput: Bool
     public var simulatedData = ""
     public var shouldVibrateOnSuccess: Bool
-    public var isTorchOn: Bool
+    public var torchMode: AVCaptureDevice.TorchMode
     public var isPaused: Bool
     public var isGalleryPresented: Binding<Bool>
     public var videoCaptureDevice: AVCaptureDevice?
     public var completion: (Result<ScanResult, ScanError>) -> Void
+
+    public var isTorchOn: Bool {
+        get { torchMode == .on }
+        set { torchMode = newValue ? .on : .off }
+    }
 
     public init(
         codeTypes: [AVMetadataObject.ObjectType],
@@ -101,6 +106,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         simulatedData: String = "",
         shouldVibrateOnSuccess: Bool = true,
         isTorchOn: Bool = false,
+        torchMode: AVCaptureDevice.TorchMode? = nil,
         isPaused: Bool = false,
         isGalleryPresented: Binding<Bool> = .constant(false),
         videoCaptureDevice: AVCaptureDevice? = AVCaptureDevice.bestForVideo,
@@ -114,7 +120,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         self.scanInterval = scanInterval
         self.simulatedData = simulatedData
         self.shouldVibrateOnSuccess = shouldVibrateOnSuccess
-        self.isTorchOn = isTorchOn
+        self.torchMode = torchMode ?? (isTorchOn ? .on : .off)
         self.isPaused = isPaused
         self.isGalleryPresented = isGalleryPresented
         self.videoCaptureDevice = videoCaptureDevice
@@ -128,7 +134,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
     public func updateUIViewController(_ uiViewController: ScannerViewController, context: Context) {
         uiViewController.parentView = self
         uiViewController.updateViewController(
-            isTorchOn: isTorchOn,
+            torchMode: torchMode,
             isGalleryPresented: isGalleryPresented.wrappedValue,
             isManualCapture: scanMode.isManual,
             isManualSelect: manualSelect
