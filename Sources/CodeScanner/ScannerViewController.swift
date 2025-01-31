@@ -373,15 +373,9 @@ extension CodeScannerView {
         }
         #endif
         
-        func updateViewController(isTorchOn: Bool, isGalleryPresented: Bool, isManualCapture: Bool, isManualSelect: Bool) {
+        func updateViewController(isTorchOn: Bool, zoomFactor: CGFloat, isGalleryPresented: Bool, isManualCapture: Bool, isManualSelect: Bool) {
             guard let videoCaptureDevice = parentView.videoCaptureDevice ?? fallbackVideoCaptureDevice else {
                 return
-            }
-            
-            if videoCaptureDevice.hasTorch {
-                try? videoCaptureDevice.lockForConfiguration()
-                videoCaptureDevice.torchMode = isTorchOn ? .on : .off
-                videoCaptureDevice.unlockForConfiguration()
             }
             
             if isGalleryPresented, !isGalleryShowing {
@@ -392,6 +386,26 @@ extension CodeScannerView {
             showManualCaptureButton(isManualCapture)
             showManualSelectButton(isManualSelect)
             #endif
+            
+            let needsZoomUpdate = videoCaptureDevice.videoZoomFactor != zoomFactor
+            
+            guard videoCaptureDevice.hasTorch || needsZoomUpdate else { return }
+            
+            try? videoCaptureDevice.lockForConfiguration()
+            
+            if videoCaptureDevice.hasTorch {
+                videoCaptureDevice.torchMode = isTorchOn ? .on : .off
+            }
+            
+            if needsZoomUpdate {
+                let newFactor = max(
+                    videoCaptureDevice.minAvailableVideoZoomFactor,
+                    min(videoCaptureDevice.maxAvailableVideoZoomFactor, zoomFactor)
+                )
+                videoCaptureDevice.videoZoomFactor = newFactor
+            }
+            
+            videoCaptureDevice.unlockForConfiguration()
         }
         
         public func reset() {
