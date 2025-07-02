@@ -14,15 +14,13 @@ import UIKit
 extension CodeScannerView {
     
     public final class ScannerViewController: UIViewController, UINavigationControllerDelegate {
-        private let photoOutput = AVCapturePhotoOutput()
-        private var isCapturing = false
         private var handler: ((UIImage?) -> Void)?
         var parentView: CodeScannerView!
         var codesFound = Set<String>()
         var didFinishScanning = false
         var lastTime = Date(timeIntervalSince1970: 0)
         private let showViewfinder: Bool
-        
+        private var latestSampleBuffer: CMSampleBuffer?
         let fallbackVideoCaptureDevice = AVCaptureDevice.default(for: .video)
         
         private var isGalleryShowing: Bool = false {
@@ -265,12 +263,15 @@ extension CodeScannerView {
                 return
             }
             let metadataOutput = AVCaptureMetadataOutput()
+            let videoOutput = AVCaptureVideoDataOutput()
 
             if captureSession!.canAddOutput(metadataOutput) {
                 captureSession!.addOutput(metadataOutput)
-                captureSession!.addOutput(photoOutput)
+                captureSession!.addOutput(videoOutput)
                 metadataOutput.setMetadataObjectsDelegate(self, queue: DispatchQueue.main)
                 metadataOutput.metadataObjectTypes = parentView.codeTypes
+
+                videoOutput.setSampleBufferDelegate(self, queue: DispatchQueue(label: "com.hackingwithswift.codeScanner.videoQueue"))
             } else {
                 didFail(reason: .badOutput)
                 return
@@ -433,6 +434,25 @@ extension CodeScannerView {
     }
 }
 
+// MARK: - AVCaptureVideoDataOutputSampleBufferDelegate
+@available(macCatalyst 14.0, *)
+extension CodeScannerView.ScannerViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
+    public func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+        latestSampleBuffer = sampleBuffer
+    }
+
+    func processFrame(_ sampleBuffer: CMSampleBuffer) {
+        guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+
+        let ciImage = CIImage(cvPixelBuffer: imageBuffer)
+
+        let context = CIContext()
+        if let cgImage = context.createCGImage(ciImage, from: ciImage.extent) {
+            handler?(UIImage(cgImage: cgImage))
+        }
+    }
+}
+
 // MARK: - AVCaptureMetadataOutputObjectsDelegate
 
 @available(macCatalyst 14.0, *)
@@ -443,7 +463,6 @@ extension CodeScannerView.ScannerViewController: AVCaptureMetadataOutputObjectsD
         guard let metadataObject = metadataObjects.first,
               !parentView.isPaused,
               !didFinishScanning,
-              !isCapturing,
               let readableObject = metadataObject as? AVMetadataMachineReadableCodeObject,
               let stringValue = readableObject.stringValue else {
 
@@ -484,9 +503,8 @@ extension CodeScannerView.ScannerViewController: AVCaptureMetadataOutputObjectsD
             }
         }
 
-        if parentView.requiresPhotoOutput {
-            isCapturing = true
-            photoOutput.capturePhoto(with: AVCapturePhotoSettings(), delegate: self)
+        if parentView.requiresPhotoOutput, let latestSampleBuffer {
+            self.processFrame(latestSampleBuffer)
         } else {
             handler?(nil)
         }
@@ -549,44 +567,6 @@ extension CodeScannerView.ScannerViewController: UIAdaptivePresentationControlle
         // Gallery is no longer being presented
         isGalleryShowing = false
     }
-}
-
-// MARK: - AVCapturePhotoCaptureDelegate
-
-@available(macCatalyst 14.0, *)
-extension CodeScannerView.ScannerViewController: AVCapturePhotoCaptureDelegate {
-    
-    public func photoOutput(
-        _ output: AVCapturePhotoOutput,
-        didFinishProcessingPhoto photo: AVCapturePhoto,
-        error: Error?
-    ) {
-        isCapturing = false
-        guard let imageData = photo.fileDataRepresentation() else {
-            print("Error while generating image from photo capture data.");
-            return
-        }
-        guard let qrImage = UIImage(data: imageData) else {
-            print("Unable to generate UIImage from image data.");
-            return
-        }
-        handler?(qrImage)
-    }
-    
-    public func photoOutput(
-        _ output: AVCapturePhotoOutput,
-        willCapturePhotoFor resolvedSettings: AVCaptureResolvedPhotoSettings
-    ) {
-        AudioServicesDisposeSystemSoundID(1108)
-    }
-    
-    public func photoOutput(
-        _ output: AVCapturePhotoOutput,
-        didCapturePhotoFor resolvedSettings: AVCaptureResolvedPhotoSettings
-    ) {
-        AudioServicesDisposeSystemSoundID(1108)
-    }
-    
 }
 
 // MARK: - AVCaptureDevice
