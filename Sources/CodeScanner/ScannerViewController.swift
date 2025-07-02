@@ -373,14 +373,14 @@ extension CodeScannerView {
         }
         #endif
         
-        func updateViewController(isTorchOn: Bool, isGalleryPresented: Bool, isManualCapture: Bool, isManualSelect: Bool) {
+        func updateViewController(torchMode: AVCaptureDevice.TorchMode, isGalleryPresented: Bool, isManualCapture: Bool, isManualSelect: Bool) {
             guard let videoCaptureDevice = parentView.videoCaptureDevice ?? fallbackVideoCaptureDevice else {
                 return
             }
             
             if videoCaptureDevice.hasTorch {
                 try? videoCaptureDevice.lockForConfiguration()
-                videoCaptureDevice.torchMode = isTorchOn ? .on : .off
+                videoCaptureDevice.torchMode = torchMode
                 videoCaptureDevice.unlockForConfiguration()
             }
             
