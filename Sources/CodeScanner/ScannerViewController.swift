@@ -103,7 +103,7 @@ extension CodeScannerView {
         #else
         
         var captureSession: AVCaptureSession?
-        var previewLayer: AVCaptureVideoPreviewLayer!
+        var previewLayer: AVCaptureVideoPreviewLayer?
 
         private lazy var viewFinder: UIImageView? = {
             guard let image = UIImage(named: "viewfinder", in: .module, with: nil) else {
@@ -148,7 +148,7 @@ extension CodeScannerView {
 
         @objc func updateOrientation() {
             guard let orientation = view.window?.windowScene?.interfaceOrientation else { return }
-            guard let connection = captureSession?.connections.last, connection.isVideoOrientationSupported else { return }
+            guard let previewLayer, let connection = previewLayer.connection, connection.isVideoOrientationSupported else { return }
             switch orientation {
             case .portrait:
                 connection.videoOrientation = .portrait
@@ -183,8 +183,10 @@ extension CodeScannerView {
                 previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
             }
 
+            let previewLayer = self.previewLayer!
             previewLayer.frame = view.layer.bounds
             previewLayer.videoGravity = .resizeAspectFill
+            updateOrientation()
             view.layer.addSublayer(previewLayer)
             addViewFinder()
 
