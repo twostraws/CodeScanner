@@ -82,6 +82,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
     public let manualSelect: Bool
     public let scanInterval: Double
     public let showViewfinder: Bool
+    public let useViewfinderAsRectOfInterest: Bool
     public let requiresPhotoOutput: Bool
     public var simulatedData = ""
     public var shouldVibrateOnSuccess: Bool
@@ -90,6 +91,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
     public var isGalleryPresented: Binding<Bool>
     public var videoCaptureDevice: AVCaptureDevice?
     public var completion: (Result<ScanResult, ScanError>) -> Void
+    private(set) var currentViewfinderStyle: AnyScannerViewfinderStyle = .init(style: .default)
 
     public init(
         codeTypes: [AVMetadataObject.ObjectType],
@@ -97,6 +99,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         manualSelect: Bool = false,
         scanInterval: Double = 2.0,
         showViewfinder: Bool = false,
+        useViewfinderAsRectOfInterest: Bool = false,
         requiresPhotoOutput: Bool = true,
         simulatedData: String = "",
         shouldVibrateOnSuccess: Bool = true,
@@ -110,6 +113,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         self.scanMode = scanMode
         self.manualSelect = manualSelect
         self.showViewfinder = showViewfinder
+        self.useViewfinderAsRectOfInterest = useViewfinderAsRectOfInterest
         self.requiresPhotoOutput = requiresPhotoOutput
         self.scanInterval = scanInterval
         self.simulatedData = simulatedData
@@ -122,7 +126,11 @@ public struct CodeScannerView: UIViewControllerRepresentable {
     }
 
     public func makeUIViewController(context: Context) -> ScannerViewController {
-        return ScannerViewController(showViewfinder: showViewfinder, parentView: self)
+        return ScannerViewController(
+            showViewfinder: showViewfinder,
+            useViewfinderAsRectOfInterest: useViewfinderAsRectOfInterest,
+            parentView: self
+        )
     }
 
     public func updateUIViewController(_ uiViewController: ScannerViewController, context: Context) {
@@ -135,6 +143,11 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         )
     }
     
+    public func viewfinderStyle<S>(_ style: S) -> Self where S: ScannerViewfinderStyle {
+        var copy = self
+        copy.currentViewfinderStyle = .init(style: style)
+        return copy
+    }
 }
 
 @available(macCatalyst 14.0, *)
