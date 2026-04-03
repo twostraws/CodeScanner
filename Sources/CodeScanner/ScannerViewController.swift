@@ -58,6 +58,8 @@ extension CodeScannerView {
         }
 
         #if targetEnvironment(simulator)
+        var previewLayer: AVCaptureVideoPreviewLayer?
+
         override public func loadView() {
             view = UIView()
             view.isUserInteractionEnabled = true
@@ -96,7 +98,7 @@ extension CodeScannerView {
             // Send back their simulated data, as if it was one of the types they were scanning for
             found(ScanResult(
                 string: parentView.simulatedData,
-                type: parentView.codeTypes.first ?? .qr, image: nil, corners: []
+                type: parentView.codeTypes.first ?? .qr, source: .gallery, image: nil, corners: [], boundingRect: .zero
             ))
         }
         
@@ -374,11 +376,8 @@ extension CodeScannerView {
         #endif
         
         func updateViewController(isTorchOn: Bool, isGalleryPresented: Bool, isManualCapture: Bool, isManualSelect: Bool) {
-            guard let videoCaptureDevice = parentView.videoCaptureDevice ?? fallbackVideoCaptureDevice else {
-                return
-            }
-            
-            if videoCaptureDevice.hasTorch {
+            if let videoCaptureDevice = parentView.videoCaptureDevice ?? fallbackVideoCaptureDevice,
+               videoCaptureDevice.hasTorch {
                 try? videoCaptureDevice.lockForConfiguration()
                 videoCaptureDevice.torchMode = isTorchOn ? .on : .off
                 videoCaptureDevice.unlockForConfiguration()
@@ -445,6 +444,7 @@ extension CodeScannerView.ScannerViewController: AVCaptureMetadataOutputObjectsD
               !didFinishScanning,
               !isCapturing,
               let readableObject = metadataObject as? AVMetadataMachineReadableCodeObject,
+              let boundingRect = previewLayer?.transformedMetadataObject(for: metadataObject)?.bounds,
               let stringValue = readableObject.stringValue else {
 
             return
@@ -452,7 +452,7 @@ extension CodeScannerView.ScannerViewController: AVCaptureMetadataOutputObjectsD
 
         handler = { [weak self] image in
             guard let self else { return }
-            let result = ScanResult(string: stringValue, type: readableObject.type, image: image, corners: readableObject.corners)
+            let result = ScanResult(string: stringValue, type: readableObject.type, source: .camera, image: image, corners: readableObject.corners, boundingRect: boundingRect)
 
             switch parentView.scanMode {
             case .once:
@@ -530,7 +530,7 @@ extension CodeScannerView.ScannerViewController: UIImagePickerControllerDelegate
                 feature.topLeft
             ]
 
-            let result = ScanResult(string: qrCodeLink, type: .qr, image: qrcodeImg, corners: corners)
+            let result = ScanResult(string: qrCodeLink, type: .qr, source: .gallery, image: qrcodeImg, corners: corners, boundingRect: feature.bounds)
             found(result)
         }
     }

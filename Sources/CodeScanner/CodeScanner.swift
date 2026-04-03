@@ -35,12 +35,20 @@ public struct ScanResult {
 
     /// The type of code that was matched.
     public let type: AVMetadataObject.ObjectType
-    
-    /// The image of the code that was matched
+
+    /// The source of the image where the code was scanned.
+    public let source: ScanSource
+
+    /// The image of the code that was matched.
     public let image: UIImage?
   
     /// The corner coordinates of the scanned code.
     public let corners: [CGPoint]
+
+    /// The bounding rectangle that contains the code that was scanned.
+    /// When the source is camera the rect is within the local coordinate space of the scanner view.
+    /// When the source is gallery the rect is in image coordinates.
+    public let boundingRect: CGRect
 }
 
 /// The operating mode for CodeScannerView.
@@ -68,6 +76,15 @@ public enum ScanMode {
             return false
         }
     }
+}
+
+/// The image source of the ScanResult.
+public enum ScanSource {
+    /// The image was captured by the camera represented by the provided or default `AVCaptureDevice`.
+    case camera
+
+    /// The image was provided by the user's photo gallery using `UIImagePickerController`.
+    case gallery
 }
 
 /// A SwiftUI view that is able to scan barcodes, QR codes, and more, and send back what was found.
