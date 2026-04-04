@@ -187,7 +187,8 @@ extension CodeScannerView {
             previewLayer.videoGravity = .resizeAspectFill
             view.layer.addSublayer(previewLayer)
             addViewFinder()
-
+            addManualButtons()
+            
             reset()
 
             if !captureSession.isRunning {
@@ -289,6 +290,11 @@ extension CodeScannerView {
                 imageView.heightAnchor.constraint(equalToConstant: 200),
             ])
         }
+        
+        private func addManualButtons() {
+            self.view.bringSubviewToFront(manualCaptureButton)
+            self.view.bringSubviewToFront(manualSelectButton)
+        }
 
         override public func viewDidDisappear(_ animated: Bool) {
             super.viewDidDisappear(animated)
@@ -353,7 +359,6 @@ extension CodeScannerView {
                 ])
             }
             
-            view.bringSubviewToFront(manualCaptureButton)
             manualCaptureButton.isHidden = !isManualCapture
         }
         
@@ -368,7 +373,6 @@ extension CodeScannerView {
                 ])
             }
             
-            view.bringSubviewToFront(manualSelectButton)
             manualSelectButton.isHidden = !isManualSelect
         }
         #endif
