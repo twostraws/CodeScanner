@@ -13,6 +13,7 @@ import UIKit
 @available(macCatalyst 14.0, *)
 extension CodeScannerView {
     
+    @MainActor
     public final class ScannerViewController: UIViewController, UINavigationControllerDelegate {
         private let photoOutput = AVCapturePhotoOutput()
         private var isCapturing = false
@@ -191,9 +192,7 @@ extension CodeScannerView {
             reset()
 
             if !captureSession.isRunning {
-                DispatchQueue.global(qos: .userInteractive).async {
-                    self.captureSession?.startRunning()
-                }
+                captureSession?.startRunning()
             }
         }
 
@@ -294,9 +293,7 @@ extension CodeScannerView {
             super.viewDidDisappear(animated)
 
             if captureSession?.isRunning == true {
-                DispatchQueue.global(qos: .userInteractive).async {
-                    self.captureSession?.stopRunning()
-                }
+                captureSession?.stopRunning()
             }
 
             NotificationCenter.default.removeObserver(self)
